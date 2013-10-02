@@ -131,6 +131,12 @@ INSTALLED_APPS = (
     'myfirstapp',
 )
 
+#adding lockdown settings
+#INSTALLED_APPS += ('lockdown', )
+#MIDDLEWARE_CLASSES += ('lockdown.middleware.LockdownMiddleware', )
+#LOCKDOWN_PASSWORDS = ('yourpasswordhere', )
+#LOCKDOWN_FORM = 'lockdown.forms.LockdownForm'
+
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".

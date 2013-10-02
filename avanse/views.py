@@ -483,14 +483,19 @@ def tables(request):
 
     if questionstring != "":
         if questionstring_search != "":
+            editedquestion = questionstring_search
+            if editedquestion in ["True", "true"]:
+                editedquestion = True
+            elif editedquestion in ["False", "false"]:
+                editedquestion = False
             if questionstring in question_options['grouped'].keys():
                 if ("$or" not in thequery.keys()):
                     thequery["$or"] = []
                 #need to expand it
                 for therow in question_options['grouped'][questionstring]:
-                    thequery["$or"].append({therow: questionstring_search})
+                    thequery["$or"].append({therow: editedquestion})
             else:  
-                thequery[questionstring] = questionstring_search
+                thequery[questionstring] = editedquestion
         else:
             d['error_messages'] += "<li>You have selected a column of type string to search, but you have not defined a search value</li>"
 
@@ -545,10 +550,8 @@ def tables(request):
         else:
             expandedcolumnselect.append(therow)
 
-    print expandedcolumnselect
 
     dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
-    print "here is the elgnth of dataset", len(dataresults)
 
 
     addColumn_commands = ""
