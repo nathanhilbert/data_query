@@ -766,7 +766,7 @@ def getfiletables(request):
     spamwriter = csv.writer(fileHandle)
     summary_data = createAJAXTable(request)
     for row in summary_data:
-        spamwriter.writerow([s.encode("utf-8") for s in row])
+        spamwriter.writerow([str(s).encode("utf-8") for s in row])
 
     filestring = fileHandle.getvalue()
     print filestring
