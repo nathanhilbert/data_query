@@ -576,7 +576,10 @@ def tables(request):
                 dataoutputarray = []
                 for thesubrow in question_options['grouped'][thecol]:
                     if therow[thesubrow] != "null":
-                        dataoutputarray.append(therow[thesubrow])
+                        if type(therow[thesubrow]) is unicode:
+                            dataoutputarray.append(therow[thesubrow])
+                        else:
+                            dataoutputarray.append(str(therow[thesubrow]))
                 dataoutput = ",".join(dataoutputarray)
             else:
                 dataoutput = therow[thecol]
@@ -725,7 +728,10 @@ def createAJAXTable(request):
                 dataoutputarray = []
                 for thesubrow in question_options['grouped'][thecol]:
                     if therow[thesubrow] != "null":
-                        dataoutputarray.append(therow[thesubrow])
+                        if type(therow[thesubrow]) is unicode:
+                            dataoutputarray.append(therow[thesubrow])
+                        else:
+                            dataoutputarray.append(str(therow[thesubrow]))
                 dataoutput = ",".join(dataoutputarray)
             else:
                 dataoutput = therow[thecol]
@@ -766,10 +772,15 @@ def getfiletables(request):
     spamwriter = csv.writer(fileHandle)
     summary_data = createAJAXTable(request)
     for row in summary_data:
-        spamwriter.writerow([str(s).encode("utf-8") for s in row])
+        temprow = []
+        for p in row:
+            try:
+                temprow.append(str(p))
+            except:
+                temprow.append(p.encode("utf-8"))
+        spamwriter.writerow(temprow)
 
     filestring = fileHandle.getvalue()
-    print filestring
     fileHandle.close() 
     
     #data = open(os.path.join(settings.PROJECT_PATH,'data/table.csv'),'r').read()
