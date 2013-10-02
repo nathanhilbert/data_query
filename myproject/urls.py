@@ -12,6 +12,7 @@ import avanse.urls
 urlpatterns = patterns('',
 
     # urls specific to this app
+    url(r'^myfirstapp/', include(myfirstapp.urls)),
     url(r'^avanse/', include(avanse.urls)),
 
     # Uncomment the admin/doc line below to enable admin documentation:

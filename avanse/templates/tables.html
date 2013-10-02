@@ -81,6 +81,7 @@
         $( "#fromdate" ).datepicker( "option", "maxDate", selectedDate );
         }
         });
+        $(".accordion").accordion({autoHeight: true});
         });
     </script>
 
@@ -138,20 +139,29 @@
                 {{error_messages|safe}}
               </ul>
             </span>
-            <div class="span4">
-              <h2>Choose Options</h2>
-                 <p>
-                  <form action="/avanse/tables" method="get" class="query_form">
-                    <select name="survey_name" class="update_page questionclass" >
+            <form action="/avanse/tables" method="get" class="query_form">
+            <div class="span4 accordion">
+              <h3><a href="#">Choose Options</a></h3>
+              <div>
+
+                  
+                    <p>First choose a survey</p><select name="survey_name" class="update_page questionclass" >
                       {{survey_options|safe}}
                     </select>
+                </div>
 
+              <h3><a href="#">Query by string</a></h3>
+                <div>
 
                     <p>Search by string</p><select name="questionstring" class="questionclass" value="{{questionstring_value}}">
                       {{questionstring_options|safe}}
                     </select>
 
                     <p>Value equals</p><input type="text" name="questionstring_search" class="questionclass" value="{{questionstring_search_option}}" />
+                </div>
+              <h3><a href="#">Query by number</a></h3>
+                <div>
+
 
                     <p>Search by number</p><select name="questionnumber" class="questionclass">
                       {{questionnumber_options|safe}}
@@ -161,7 +171,10 @@
                     </select>
 
                     <p>Value</p><input type="text" name="questionnumber_search" class="questionclass" value="{{questionnumber_search_option}}">
+                </div>
 
+              <h3><a href="#">Query by date</a></h3>
+                <div>
 
                     <p>Search by date</p><select name="questiondate" class="questionclass">
                       {{questiondate_options|safe}}
@@ -170,18 +183,22 @@
                     <input type="text" id="fromdate" name="fromdate" value="{{fromdate_option|safe}}"/>
                     <label for="todate">to</label>
                     <input type="text" id="todate" name="todate" value="{{todate_option|safe}}"/>
-
+                </div>
+                <h3><a href="#">Select Columns to display</a></h3>
+                  <div>
                     
                     <p>Select which columns to display</p>
                     <select multiple name="columnselect" size=10 class="questionclass">
                       {{columnselect_value_options|safe}}
                     </select>
+
                     
                     <input type="submit" name="submit_button" value="Submit" />
+                  </div>
 
-                  </form>
-                </p>
+                  
             </div><!--/span-->
+            </form>
 
           </div><!--/row-->
 

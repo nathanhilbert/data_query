@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ TITLE }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <!---
+    <link rel="shortcut icon" href="/static/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/static/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/static/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/static/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/static/ico/apple-touch-icon-57-precomposed.png"> -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+    <link rel="stylesheet" href="/resources/demos/style.css" />
+    <script>
+        $(function() {
+        $( "#fromdate" ).datepicker({
+        defaultDate: "+1w",
+        changeMonth: true,
+        changeYear: true,
+        numberOfMonths: 3,
+        onClose: function( selectedDate ) {
+        $( "#todate" ).datepicker( "option", "minDate", selectedDate );
+        }
+        });
+        $( "#todate" ).datepicker({
+        defaultDate: "+1w",
+        changeMonth: true,
+        changeYear: true,
+        numberOfMonths: 3,
+        onClose: function( selectedDate ) {
+        $( "#fromdate" ).datepicker( "option", "maxDate", selectedDate );
+        }
+        });
+        });
+    </script>
+
+
+
+
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawCharts);
+      function drawCharts(){
+        var freq_survey_string = '{{freq_survey_hour_json}}';
+        var parsestring = freq_survey_string.replace(/&quot;/g, "\"");
+        var freq_survey_string_output = JSON.parse(parsestring);
+        freq_survey_string_output.unshift(["Time", "Num Surveys"]);
+        var surveys_freq_data = google.visualization.arrayToDataTable(freq_survey_string_output);
+        var options = {title:"Timespan Surveys"};
+        var chart = new google.visualization.ColumnChart(document.getElementById("surveys_freq"));
+        chart.draw(surveys_freq_data, options);
+
+        var freq_device_string = '{{freq_device_output_json}}';
+        var parsestring = freq_device_string.replace(/&quot;/g, "\"");
+        var freq_device_obj = JSON.parse(parsestring);
+        freq_device_obj.unshift(["Device", "Num Surveys"]);
+        console.log(freq_device_obj);
+        var device_freq_data = google.visualization.arrayToDataTable(freq_device_obj);
+        var options = {};
+        var chart = new google.visualization.PieChart(document.getElementById("device_freq"));
+        chart.draw(device_freq_data, options);
+
+        var freq_candle_string = '{{freq_candle_time_output}}';
+        var parsestring = freq_candle_string.replace(/&quot;/g, "\"");
+        var freq_candle_time_output = JSON.parse(parsestring);
+        freq_candle_time_output.unshift(["Device", "Min Time", "-.5 StdDev", "+.5 StdDev", "Max Time"]);
+        var candle_freq_data = google.visualization.arrayToDataTable(freq_candle_time_output);
+        var options = {vAxis:{title:"Minutes"}};
+        var chart = new google.visualization.CandlestickChart(document.getElementById("candle_freq"));
+        chart.draw(candle_freq_data, options);
+      }
+    </script>
+    
+  </head>
+
+  <body>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a data-target=".nav-collapse" data-toggle="collapse" class="btn btn-navbar">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a href="/myfirstapp/home" class="brand">FormHub Experiments</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="/myfirstapp/home">Home</a></li>
+              <li><a href="/myfirstapp/questions">Questions</a></li>
+              <li ><a href="/myfirstapp/mashup">Mashup</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+     <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Choose Options</h2>
+                 <p>
+                  <form action="/myfirstapp/home" method="get">
+                    <select name="survey_name">
+                      {{survey_options|safe}}
+                    </select>
+
+                    <p>Time Span by </p><select name="frequency">
+                      {{freq_options|safe}}
+                    </select>
+
+                    <label for="fromdate">From</label>
+                    <input type="text" id="fromdate" name="fromdate" value="{{fromdate_default|safe}}"/>
+                    <label for="todate">to</label>
+                    <input type="text" id="todate" name="todate" value="{{todate_default|safe}}"/>
+                    
+                    <input type="submit" value="Submit" />
+
+                  </form>
+                </p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+    <div class="container-fluid">
+      <div class="row-fluid">  
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Surveys Completed over time</h2>
+                 <p><div id="surveys_freq" style="width:900px;height:500px;"></div></p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Breakdown by Device</h2>
+              <p><div id="device_freq" style="width:900px;height:500px;"></div></p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Average Time of surveys by device</h2>
+                <p><div id="candle_freq" style="width:900px;height:500px;"></div></p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <p>&copy; Company 2012</p>
+      </footer>
+
+    </div>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+
+  </body>
+</html>

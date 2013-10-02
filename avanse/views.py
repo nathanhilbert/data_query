@@ -303,7 +303,7 @@ def charts(request, chart_type):
     #define the necessary template options
     d = {"TITLE":"Charts in " + chart_type, "chart_type": chart_type}
     currentsurvey = request.GET.get("survey_name", "")
-    surveys_options_info = [["inventaire_agro_entreprise","dd299f7445d14885905664e6dc93319b"]]
+    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"]]
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['question_options1'] = "<option value=''>Please Select a Survey</option>"
@@ -426,7 +426,7 @@ def tables(request):
 
     currentsurvey = request.GET.get("survey_name", "")
     submitbutton = request.GET.get("submit_button", "")
-    surveys_options_info = [["inventaire_agro_entreprise","dd299f7445d14885905664e6dc93319b"],["FPSurveyKikwit29", "cd1bfa34d6364b85b9ad0c03fad78730"]]
+    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"]]
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['questionstring_options'] = "<option value=''>Please Select a Survey</option>"
