@@ -1,5 +1,6 @@
 from django.shortcuts import render_to_response
 from django.shortcuts import HttpResponse
+from django.template import RequestContext
 
 
 import urllib2, base64
@@ -11,6 +12,7 @@ import numpy as np
 from pybamboo.dataset import Dataset
 import time
 from random import randint
+import csv
 
 
 
@@ -198,44 +200,110 @@ def makeSurveyOptions(myarray, selected=""):
         survey_options += tempoutput
     return survey_options
 
-def processSummary(summaryresults, question_options, chart_type, options):
-    if chart_type == "pie":
-        #all pie charts will be strings
+def processSummaryPie(summaryresults, question_options, options):
+    outputarray = []
+    answerkey = []
+    if options['currentquestion'] in question_options['grouped'].keys():
+        outputlist = {}
+        for therowkey in question_options['grouped'][options['currentquestion']]:
+            for srow in summaryresults[therowkey]['summary'].keys():
+                if srow in outputlist.keys():
+                    outputlist[srow] += summaryresults[therowkey]['summary'][srow]
+                else:
+                    outputlist[srow] = summaryresults[therowkey]['summary'][srow]
+        for okey in outputlist.keys():
+            outputarray.append([okey, outputlist[okey]])
+    else:
         outputarray = []
         summaryresults_sub = summaryresults[options['currentquestion']]['summary']
+
         for srow in summaryresults_sub.keys():
             outputarray.append([srow, summaryresults_sub[srow]])
-        return outputarray
+    return outputarray
 
+def processSummaryScatter(dataresults, question_options, options):
+    summary_data = []
+    currentquestion1 = options['currentquestion1']
+    currentquestion2 = options['currentquestion2']
 
+    for therow in dataresults:
+        if (currentquestion1 in question_options['grouped'].keys()):
+            datapart1 = 0
+            for srow in question_options['grouped'][currentquestion1]:
+                if therow[srow] != "null":
+                    datapart1 += therow[srow]
+        else:
+            datapart1 = therow[options['currentquestion1']]
+            if therow[options['currentquestion1']] == "null":
+                datapart1 = 0
 
-def getQuestions(currentsurvey):
+        if (currentquestion2 in question_options['grouped'].keys()):
+            datapart2 = 0
+            for srow in question_options['grouped'][currentquestion2]:
+                if therow[srow] != "null":
+                    datapart2 += therow[srow]
+        else:
+            datapart2 = therow[options['currentquestion2']]
+            if therow[options['currentquestion2']] == "null":
+                datapart2 = 0
+        summary_data.append([datapart1, datapart2])
+    return summary_data
+
+def getQuestions(currentsurvey, groupitems = True):
 
     formdata = Dataset(currentsurvey)
     myobject = formdata.get_info()
-    question_options = {'all':[], 'string':[], 'numeric':[], 'datetime':[], "bytype":{}}
+    question_options = {'all':[], 'string':[], 'numeric':[], 'datetime':[], "bytype":{}, 'grouped':{}}
 
     for itemkey in myobject['schema'].keys():
-        if (myobject['schema'][itemkey]['simpletype'] in ["integer", "decimal", "float"]):
-            question_options['bytype'][itemkey] = "numeric"
-            question_options['numeric'].append([myobject['schema'][itemkey]['label'], itemkey])
-        elif (myobject['schema'][itemkey]['simpletype'] in ["datetime"]):
-            question_options['datetime'].append([myobject['schema'][itemkey]['label'], itemkey])
-            question_options['bytype'][itemkey] = "datetime"
-        elif (myobject['schema'][itemkey]['simpletype'] not in ["geopoint", "photo"]):
-            question_options['bytype'][itemkey] = "string"
-            question_options['string'].append([myobject['schema'][itemkey]['label'], itemkey])
+
+
+        itemkeysplit =  itemkey.split("__", 1)
+
+        if len(itemkeysplit) == 1 or not groupitems:
+            if (myobject['schema'][itemkey]['simpletype'] in ["integer", "decimal", "float"]):
+                question_options['bytype'][itemkey] = "numeric"
+                question_options['numeric'].append([myobject['schema'][itemkey]['label'], itemkey])
+            elif (myobject['schema'][itemkey]['simpletype'] in ["datetime"]):
+                question_options['datetime'].append([myobject['schema'][itemkey]['label'], itemkey])
+                question_options['bytype'][itemkey] = "datetime"
+            elif (myobject['schema'][itemkey]['simpletype'] not in ["geopoint", "photo"]):
+                question_options['bytype'][itemkey] = "string"
+                question_options['string'].append([myobject['schema'][itemkey]['label'], itemkey])
+            else:
+                question_options['bytype'][itemkey] = "other"
+            question_options['all'].append([myobject['schema'][itemkey]['label'], itemkey])
         else:
-            question_options['bytype'][itemkey] = "other"
-        question_options['all'].append([myobject['schema'][itemkey]['label'], itemkey])
+            groupedname = itemkeysplit[0].rsplit("_", 1)
+            if (len(groupedname) == 1):
+                continue
+            groupedname = groupedname[0] + "__" + itemkeysplit[1]
+            if (groupedname in question_options['grouped'].keys()):
+                question_options['grouped'][groupedname].append(itemkey)
+                continue
+            if (myobject['schema'][itemkey]['simpletype'] in ["integer", "decimal", "float"]):
+                question_options['bytype'][groupedname] = "numeric"
+                question_options['numeric'].append([myobject['schema'][itemkey]['label'], groupedname])
+            elif (myobject['schema'][itemkey]['simpletype'] in ["datetime"]):
+                question_options['datetime'].append([myobject['schema'][itemkey]['label'], groupedname])
+                question_options['bytype'][groupedname] = "datetime"
+            elif (myobject['schema'][itemkey]['simpletype'] not in ["geopoint", "photo"]):
+                question_options['bytype'][groupedname] = "string"
+                question_options['string'].append([myobject['schema'][itemkey]['label'], groupedname])
+            else:
+                question_options['bytype'][groupedname] = "other"
+            question_options['all'].append([myobject['schema'][itemkey]['label'], groupedname])
+            question_options['grouped'][groupedname] = [itemkey]
+
     return question_options
+
 
 
 def charts(request, chart_type):
     #define the necessary template options
     d = {"TITLE":"Charts in " + chart_type, "chart_type": chart_type}
     currentsurvey = request.GET.get("survey_name", "")
-    surveys_options_info = [["Please Select A Survey", ""],["inventaire_agro_entreprise","f0ec5bfb4f9e4bc99b4046073de3b7bb"]]
+    surveys_options_info = [["inventaire_agro_entreprise","dd299f7445d14885905664e6dc93319b"]]
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['question_options1'] = "<option value=''>Please Select a Survey</option>"
@@ -246,9 +314,10 @@ def charts(request, chart_type):
     currentquestion2 = request.GET.get("question2", "")
     d['currentquestion1'] = currentquestion1
     d['currentquestion2'] = currentquestion2
-    question_options = getQuestions(currentsurvey)
+
 
     if chart_type == "pie":
+        question_options = getQuestions(currentsurvey)
         d['chart_class'] = "PieChart"
         d['question_options1'] = makeSurveyOptions(question_options['string'], currentquestion1)
         d['is_disabled'] = "disabled"
@@ -257,10 +326,16 @@ def charts(request, chart_type):
             return render_to_response('charts.html', d)
 
         thedataset = Dataset(currentsurvey)
-
-        summaryresults = thedataset.get_summary(select=[currentquestion1])
-        summary_data = processSummary(summaryresults, question_options, chart_type, options={"currentquestion":currentquestion1})
+        if (currentquestion1 in question_options['grouped'].keys()):
+            currentquestionset = []
+            for therow in question_options['grouped'][currentquestion1]:
+                currentquestionset.append(therow)
+        else:
+            currentquestionset = [currentquestion1]
+        summaryresults = thedataset.get_summary(select=currentquestionset)
+        summary_data = processSummaryPie(summaryresults, question_options, {"currentquestion":currentquestion1})
     elif (chart_type == "scatter"):
+        question_options = getQuestions(currentsurvey)
         d['chart_class'] = "ScatterChart"
         d['question_options1'] = makeSurveyOptions(question_options['numeric'], currentquestion1)
         d['question_options2'] = makeSurveyOptions(question_options['numeric'], currentquestion2)
@@ -268,17 +343,23 @@ def charts(request, chart_type):
         if (currentquestion1 == "" or currentquestion2 == ""):
             return render_to_response('charts.html', d) 
         thedataset = Dataset(currentsurvey)
-        dataresults = thedataset.get_data(select=[currentquestion1, currentquestion2])
-        summary_data = []
-        for therow in dataresults:
-            datapart1 = therow[currentquestion1]
-            if therow[currentquestion1] == "null":
-                datapart1 = 0
-            datapart2 = therow[currentquestion2]
-            if therow[currentquestion2] == "null":
-                datapart2 = 0
-            summary_data.append([datapart1, datapart2])
+        selectcolumnsarray = []
+        if currentquestion1 in question_options['grouped'].keys():
+            for srow in question_options['grouped'][currentquestion1]:
+                selectcolumnsarray.append(srow)
+        else:
+            selectcolumnsarray.append(currentquestion1)
+        if currentquestion2 in question_options['grouped'].keys():
+            for srow in question_options['grouped'][currentquestion2]:
+                selectcolumnsarray.append(srow)
+        else:
+            selectcolumnsarray.append(currentquestion2)
+
+        dataresults = thedataset.get_data(select=selectcolumnsarray)
+        summary_data = processSummaryScatter(dataresults, question_options, {"currentquestion1":currentquestion1, "currentquestion2":currentquestion2})
+
     elif (chart_type == "line"):
+        question_options = getQuestions(currentsurvey)
         d['chart_class'] = "ColumnChart"
         d['question_options1'] = makeSurveyOptions(question_options['datetime'], currentquestion1)
         d['question_options2'] = makeSurveyOptions(question_options['string'] + question_options['numeric'], currentquestion2)
@@ -299,13 +380,12 @@ def charts(request, chart_type):
         for therow in dataresults:
             if (therow['level_1'] != currentquestion2):
                 continue
-            print "****************"
-            print therow
             datapart2 = therow['0']
             if (datapart2 == "null"):
                 datapart2 = 0
             summary_data.append([str(therow['level_0']), datapart2])
     elif (chart_type == "bar"):
+        question_options = getQuestions(currentsurvey, False)
         d['chart_class'] = "ColumnChart"
         d['question_options1'] = makeSurveyOptions(question_options['string'], currentquestion1)
         d['question_options2'] = makeSurveyOptions(question_options['string'] + question_options['numeric'], currentquestion2)
@@ -315,7 +395,9 @@ def charts(request, chart_type):
             return render_to_response('charts.html', d)
 
         thedataset = Dataset(currentsurvey)
+
         dataresults = thedataset.get_summary(select=[currentquestion2], groups=[currentquestion1])
+        print dataresults
         currentresults = dataresults[currentquestion1]
 
         reslabels = []
@@ -401,16 +483,33 @@ def tables(request):
 
     if questionstring != "":
         if questionstring_search != "":
-            thequery[questionstring] = questionstring_search
+            if questionstring in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                #need to expand it
+                for therow in question_options['grouped'][questionstring]:
+                    thequery["$or"].append({therow: questionstring_search})
+            else:  
+                thequery[questionstring] = questionstring_search
         else:
             d['error_messages'] += "<li>You have selected a column of type string to search, but you have not defined a search value</li>"
 
+
     if questionnumber != "":
         if questionnumber_search != "":
-            if questionnumber_operator == "" or questionnumber_operator == "equal":
-                thequery[questionnumber] = float(questionnumber_search)
+            if questionnumber in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                for therow in question_options['grouped'][questionnumber]:
+                    if questionnumber_operator == "" or questionnumber_operator == "equal":
+                        thequery['$or'].append({therow: float(questionnumber_search)}) 
+                    else:
+                        thequery['$or'].append({therow: {questionnumber_operator: float(questionnumber_search)}}) 
             else:
-                thequery[questionnumber] = {questionnumber_operator: float(questionnumber_search)}
+                if questionnumber_operator == "" or questionnumber_operator == "equal":
+                    thequery[questionnumber] = float(questionnumber_search)
+                else:
+                    thequery[questionnumber] = {questionnumber_operator: float(questionnumber_search)}
 
         else:
             d['error_messages'] += "<li>You have selected a column of type number to search, but you have not defined a search value</li>"
@@ -419,18 +518,36 @@ def tables(request):
         if fromdate == "" and todate == "":
             d['error_messages'] += "<li>You have selected a column of type date to search, but you have not defined a search value</li>"
         else:
-            if fromdate != "":
-                thequery[questiondate] = {"$gt": fromdate}
-            if todate != "":
-                print todate
-                thequery[questiondate] = {"$lt": todate}
+            if questionnumber in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                for therow in question_options['grouped'][questionnumber]:
+                    if fromdate != "":
+                        thequery['$or'] = {therow: {"$gt": fromdate}}
+                    if todate != "":
+                        thequery['$or'] = {therow: {"$lt": todate}}
+            else:
+                if fromdate != "":
+                    thequery[questiondate] = {"$gt": fromdate}
+                if todate != "":
+                    thequery[questiondate] = {"$lt": todate}
 
 
 
     thedataset = Dataset(currentsurvey)
-    print "here is the query", thequery
 
-    dataresults = thedataset.get_data(select=columnselect,  limit=-1)
+    #check if the column select has any grouped items
+    expandedcolumnselect = []
+    for therow in columnselect:
+        if (therow in question_options['grouped'].keys()):
+            for subrow in question_options['grouped'][therow]:
+                expandedcolumnselect.append(subrow)
+        else:
+            expandedcolumnselect.append(therow)
+
+    print expandedcolumnselect
+
+    dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
     print "here is the elgnth of dataset", len(dataresults)
 
 
@@ -438,7 +555,7 @@ def tables(request):
     for thecolumn in columnselect:
         if thecolumn == "":
             continue
-        if (question_options['bytype'][thecolumn] == "numeric"):
+        if (question_options['bytype'][thecolumn] == "numeric" and thecolumn not in question_options['grouped'].keys()):
             addColumn_commands += "data.addColumn('number', '" + thecolumn + "');"
         else:
             addColumn_commands += "data.addColumn('string', '" + thecolumn + "');"
@@ -451,31 +568,42 @@ def tables(request):
         for thecol in columnselect:
             if thecol == "":
                 continue
-            if (question_options['bytype'][thecol] == "numeric"):
-                if therow[thecol] == "null":
+
+            if thecol in question_options['grouped'].keys():
+                dataoutputarray = []
+                for thesubrow in question_options['grouped'][thecol]:
+                    if therow[thesubrow] != "null":
+                        dataoutputarray.append(therow[thesubrow])
+                dataoutput = ",".join(dataoutputarray)
+            else:
+                dataoutput = therow[thecol]
+
+
+            if (question_options['bytype'][thecol] == "numeric" and thecol not in question_options['grouped'].keys()):
+                if dataoutput == "null":
                     temprow.append(0)
                 else:
-                    temprow.append(therow[thecol])
+                    temprow.append(dataoutput)
             elif (question_options['bytype'][thecol] == "datetime"):
-                if therow[thecol] == "null":
+                if dataoutput == "null":
                     temprow.append("None")
                 else:
-                    temprow.append(str(therow[thecol]))
-            elif (type(therow[thecol]) is unicode):
-                if therow[thecol] == "null":
+                    temprow.append(str(dataoutput))
+            elif (type(dataoutput) is unicode):
+                if dataoutput == "null":
                     temprow.append("None")
                 else:
-                    temprow.append(therow[thecol].replace('"', "'"))
-            elif (type(therow[thecol]) is bool):
-                if therow[thecol] == "null":
+                    temprow.append(dataoutput.replace('"', "'"))
+            elif (type(dataoutput) is bool):
+                if dataoutput == "null":
                     temprow.append("None")
                 else:
-                    temprow.append(str(therow[thecol]))
+                    temprow.append(str(dataoutput))
             else:
-                if therow[thecol] == "null":
+                if dataoutput == "null":
                     temprow.append("None")
                 else:
-                    temprow.append(therow[thecol])
+                    temprow.append(dataoutput)
         summary_data.append(temprow)
 
     io = StringIO()
@@ -487,6 +615,165 @@ def tables(request):
 
 
 
+
+def createAJAXTable(request):
+
+    currentsurvey = request.GET.get("survey_name", "")
+    submitbutton = request.GET.get("submit_button", "")
+
+
+    questionstring = request.GET.get("questionstring", "")
+    questionstring_search = request.GET.get("questionstring_search", "")
+
+    questionnumber = request.GET.get("questionnumber", "")
+    questionnumber_operator = request.GET.get("questionnumber_operator", "")
+    questionnumber_search = request.GET.get("questionnumber_search", "")
+
+    questiondate = request.GET.get("questiondate", "")
+    fromdate = request.GET.get("fromdate", "")
+    todate = request.GET.get("todate", "")
+    columnselect = request.GET.getlist("columnselect", "")
+
+    question_options = getQuestions(currentsurvey)
+
+
+
+    #build the query
+    thequery = {}
+
+    if questionstring != "":
+        if questionstring_search != "":
+            if questionstring in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                #need to expand it
+                for therow in question_options['grouped'][questionstring]:
+                    thequery["$or"].append({therow: questionstring_search})
+            else:  
+                thequery[questionstring] = questionstring_search
+
+
+    if questionnumber != "":
+        if questionnumber_search != "":
+            if questionnumber in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                for therow in question_options['grouped'][questionnumber]:
+                    if questionnumber_operator == "" or questionnumber_operator == "equal":
+                        thequery['$or'].append({therow: float(questionnumber_search)}) 
+                    else:
+                        thequery['$or'].append({therow: {questionnumber_operator: float(questionnumber_search)}}) 
+            else:
+                if questionnumber_operator == "" or questionnumber_operator == "equal":
+                    thequery[questionnumber] = float(questionnumber_search)
+                else:
+                    thequery[questionnumber] = {questionnumber_operator: float(questionnumber_search)}
+
+
+    if questiondate != "":
+        if fromdate != "" and todate != "":
+            if questionnumber in question_options['grouped'].keys():
+                if ("$or" not in thequery.keys()):
+                    thequery["$or"] = []
+                for therow in question_options['grouped'][questionnumber]:
+                    if fromdate != "":
+                        thequery['$or'] = {therow: {"$gt": fromdate}}
+                    if todate != "":
+                        thequery['$or'] = {therow: {"$lt": todate}}
+            else:
+                if fromdate != "":
+                    thequery[questiondate] = {"$gt": fromdate}
+                if todate != "":
+                    thequery[questiondate] = {"$lt": todate}
+
+
+
+    thedataset = Dataset(currentsurvey)
+
+    #check if the column select has any grouped items
+    expandedcolumnselect = []
+    for therow in columnselect:
+        if (therow in question_options['grouped'].keys()):
+            for subrow in question_options['grouped'][therow]:
+                expandedcolumnselect.append(subrow)
+        else:
+            expandedcolumnselect.append(therow)
+
+
+    dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
+
+
+    summary_data = []
+    temprow = []
+    for thecolumn in columnselect:
+        if thecolumn == "":
+            continue
+        temprow.append(thecolumn)
+    summary_data.append(temprow)
+
+
+    for therow in dataresults:
+        temprow = []
+        for thecol in columnselect:
+            if thecol == "":
+                continue
+
+            if thecol in question_options['grouped'].keys():
+                dataoutputarray = []
+                for thesubrow in question_options['grouped'][thecol]:
+                    if therow[thesubrow] != "null":
+                        dataoutputarray.append(therow[thesubrow])
+                dataoutput = ",".join(dataoutputarray)
+            else:
+                dataoutput = therow[thecol]
+
+
+            if (question_options['bytype'][thecol] == "numeric" and thecol not in question_options['grouped'].keys()):
+                if dataoutput == "null":
+                    temprow.append(0)
+                else:
+                    temprow.append(dataoutput)
+            elif (question_options['bytype'][thecol] == "datetime"):
+                if dataoutput == "null":
+                    temprow.append("None")
+                else:
+                    temprow.append(str(dataoutput))
+            elif (type(dataoutput) is unicode):
+                if dataoutput == "null":
+                    temprow.append("None")
+                else:
+                    temprow.append(dataoutput.replace('"', "'"))
+            elif (type(dataoutput) is bool):
+                if dataoutput == "null":
+                    temprow.append("None")
+                else:
+                    temprow.append(str(dataoutput))
+            else:
+                if dataoutput == "null":
+                    temprow.append("None")
+                else:
+                    temprow.append(dataoutput)
+        summary_data.append(temprow)
+
+    return summary_data
+
+def getfiletables(request):
+
+    fileHandle = StringIO()
+    spamwriter = csv.writer(fileHandle)
+    summary_data = createAJAXTable(request)
+    for row in summary_data:
+        spamwriter.writerow([s.encode("utf-8") for s in row])
+
+    filestring = fileHandle.getvalue()
+    print filestring
+    fileHandle.close() 
+    
+    #data = open(os.path.join(settings.PROJECT_PATH,'data/table.csv'),'r').read()
+    resp = HttpResponse(filestring, mimetype='application/x-download')
+    #resp = HttpResponse(filestring, mimetype='text/csv')
+    resp['Content-Disposition'] = 'attachment;filename=tableoutput.csv'
+    return resp
 
 def mashup(request):
     d = {}
@@ -573,33 +860,7 @@ def getworldbank(request):
 
 
 
-def getChartData(request):
-    service = request.GET.get("services", "MEC")
 
-    #this will get the general info for each question
-    urlreq = "http://search.worldbank.org/api/v2/projects?format=json&fl=status,project_name,totalamt,sector&countrycode_exact=HN&status_exact=Active&source=IBRD&rows=500&geocode=off"
-    if (service == "MEC"):
-        urlreq = "http://search.worldbank.org/api/v2/projects?format=json&fl=status,project_name,totalamt,sector&countrycode_exact=HN&status_exact=Active&source=IBRD&rows=500&geocode=off"
-    try:
-        request = urllib2.Request(urlreq)
-        result = urllib2.urlopen(request)
-        response =  result.read()
-    except:
-        response = "{}"
-
-    response_data = json.loads(response)
-
-    outputdata = {"data":[], "aggregates":{}}
-    totalamount = 0
-    for reskeys in response_data['projects'].keys():
-        resobj = response_data['projects'][reskeys]
-        outputdata['data'].append([resobj['project_name'], int(resobj['totalamt'].replace(',',''))])
-        totalamount += int(resobj['totalamt'].replace(',',''))
-    outputdata['aggregates']['totalamount'] = totalamount
-
-
-
-    return HttpResponse(json.dumps(outputdata), mimetype="application/json")
 
 
 

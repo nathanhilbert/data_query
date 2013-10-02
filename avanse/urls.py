@@ -5,7 +5,8 @@ from django.core.urlresolvers import reverse
 
 
 urlpatterns = patterns('',
-    url(r'^home', 'avanse.views.home'),
+    url(r'^home', 'avanse.views.tables'),
+    url(r'^getfile\/tables', 'avanse.views.getfiletables'),
     url(r'^tables', 'avanse.views.tables'),
     url(r'^charts\/(?P<chart_type>\w{0,50})', 'avanse.views.charts'),
     
