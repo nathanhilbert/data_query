@@ -8,6 +8,7 @@ import settings
 
 # import your urls from each app here, as needed
 import avanse.urls
+import myfirstapp.urls
 
 urlpatterns = patterns('',
 
