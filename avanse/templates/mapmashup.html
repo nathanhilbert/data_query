@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ TITLE }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      #accordion{
+        min-width: 300px;
+        width:45%;
+        display: inline-block;
+      }
+    </style>
+    <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <!---
+    <link rel="shortcut icon" href="/static/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/static/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/static/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/static/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/static/ico/apple-touch-icon-57-precomposed.png"> -->
+    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+
+
+    <link rel="stylesheet" href="/static/openlayers/theme/default/style.css" type="text/css">
+    <script src="/static/openlayers/OpenLayers.js"></script>
+    <script src="/static/jqueryui/jquery.form.min.js"></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script src="/static/js/tamis.js"></script>
+
+
+
+
+    
+    <script type="text/javascript">
+
+/*
+      google.load("visualization", "1", {packages:["corechart"]});
+      google.setOnLoadCallback(drawCharts);
+      function drawCharts(){
+        var summary_data = '{{summary_data}}';
+        var parsestring = summary_data.replace(/&quot;/g, "\"");
+        var summary_output_object = JSON.parse(parsestring);
+        summary_output_object.unshift(["Question Choice", "Response"]);
+        var summary_output_data = google.visualization.arrayToDataTable(summary_output_object);
+        var options = {title:"Question Responses"};
+        var chart = new google.visualization.ColumnChart(document.getElementById("summary_info"));
+        chart.draw(summary_output_data, options);
+        */
+     // }
+    </script>
+    
+  </head>
+
+  <body onload="">
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a data-target=".nav-collapse" data-toggle="collapse" class="btn btn-navbar">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a href="/myfirstapp/home" class="brand">FormHub Experiments</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li ><a href="/myfirstapp/home">Home</a></li>
+              <li><a href="/myfirstapp/questions">Questions</a></li>
+              <li class="active"><a href="/myfirstapp/mashup">Mashup</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+    <div class="container-fluid">
+      <p>This is an example of bringing in many data sources to a common screen and display information on charts and a common map area.  This type of application could be used
+          in a variety of cases including providing project transparency to clients, delivering real-time snapshots of projects to management, or creating data-driven decisions in the field.
+          All data is being pull from live datasources.  If something is updated in TAMIS it will be immediately be reflected on this application.  </p>
+          <p>Advantages:</p>
+          <div class="row-fluid">
+            <div class="span4">
+              <ul>
+                <li>Replicable and customizable for all projects</li>
+                <li>Working with real-time data</li>
+                <li>Uses all available data sources</li>
+                <li>Works anywhere in *most* browsers</li>
+                <li>Can implement security and restrict views on multiple levels</li>
+                <li>All free software.  Just paying for development time</li>
+              </ul>
+            </div>
+            <div class="span4">
+              <p>Disadvantages: </p>
+              <ul>
+                <li>Limited creativity of data analysis from user</li>
+                <li>Most implementations will have LOE</li>
+                <li>Others?</li>
+              </ul>
+            </div>
+            <div class="span4">
+              <p>Estimated Costs - This application took 24 hours including learning Django, TAMIS, and programming the foundation</p>
+              <ul>
+                <li>Replicate exactly this for another project - 2 days LOE</li>
+                <li>Add time series charts, filtering, and searching - 5 days LOE (mostly learning)</li>
+                <li>Create custom, predefined analyses with good visuals - 10 LOE</li>
+              </ul>
+            </div>
+          </div>
+        <p><img src="/static/img/Top Info.png" /></p>
+    </div>
+
+     <div class="container-fluid">
+              <div id="map" class="map" style="width: 45%;height: 800px;display: inline-block;min-width: 200px;float:left;"></div>
+
+              <div id="accordion">
+                <h3>TAMIS Business Contacts</h3>
+                <div>
+                  <input type="checkbox" name="tamis_layer" class = "togglelayer" value="Tamis Layer" checked="checked">Toggle the MSMEs</input><br>
+                  <input type="checkbox" name="grants_layer" class = "togglelayer" value="Grants Layer" checked="checked">Toggle the Grants</input><br><br>
+                  <p>------------------------------------------</p>
+                  <form id="tamisform"> 
+                    <input type="checkbox" name="tamis_layers" value="Crafts" checked="checked">Crafts<br>
+                    <input type="checkbox" name="tamis_layers" value="Entertainment" checked="checked">Entertainment<br>
+                    <input type="checkbox" name="tamis_layers" value="Guides" checked="checked">Guides<br>
+                    <input type="checkbox" name="tamis_layers" value="Hotels" checked="checked">Hotels<br>
+                    <input type="checkbox" name="tamis_layers" value="Restaurants" checked="checked">Restaurants<br>
+                    <input type="checkbox" name="tamis_layers" value="Tours" checked="checked">Tours<br>
+                    <input type="submit" value="Update Map" /> 
+                </form>
+                <p>Women Owned Businesses: <span id="tamis_women">0</span></p>
+                <p>Male Owned Businesses: <span id="tamis_men">0</span></p>
+                <div id="tamis_sector_chart" style="width:500;height:500;"></div>
+                <div id="grants_chart" style="width:500;height:500;"></div>
+                </div>
+                <h3>World Bank</h3>
+                <div>
+                  <input type="checkbox" name="wb_layer" class = "togglelayer" value="World Bank Layer" checked="checked">Toggle the World Bank Project Layer<br><br><br>
+                  <p>------------------------------------------</p>
+                  <form id="wbform"> 
+                    <input type="submit" value="Update" /> 
+                </form>
+                <p>Total: $<span id="worlbank_projects_total">0</span></p>
+                <div id="worldbank_projects_chart" style="width:300;height:300;"></div>
+                </div>
+                <h3>WMS</h3>
+                <div>
+                  <input type="checkbox" name="wb_layer" class = "togglelayer" value="Project Area">Toggle the Project Area Layer<br><br><br>
+                </div>
+                <h3>FormHub</h3>
+                <div>
+                  <p>See other pages at top for an example of pulling from FormHub</p>
+                </div>
+              </div>
+
+
+      </div><!--/row-->
+
+    <div class="container-fluid">
+      <p>This application uses the Django python web framework to pull data from TAMIS using custom programmed agents that are web accessible.  
+        Most information is passed with JSON or GEOJSON format to be used for other applications including the mapping application in the browser.<br/>
+        <a href="http://dominodev.daiglobal.net/Honduras/HondurasProParqueTAMIS.nsf/openmsme?OpenAgent=1&services=Crafts,Entertainment,Guides,Hotels,Restaurants,Tours" target="_blank">See an example of the output from TAMIS</a><br/>
+        <a href="http://10.233.3.87/myfirstapp/ajax/getgrantdata" target="_blank">See an example of output from Django</a>
+      </p>
+      <p>Please note that variables being passed to TAMIS allows many methods of querying the data within TAMIS.</p>
+      <p><img src="/static/img/Technical.png" /></p>
+    </div>
+
+
+
+      <hr>
+
+      <footer>
+        <p>&copy; Me</p>
+      </footer>
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+
+  </body>
+</html>

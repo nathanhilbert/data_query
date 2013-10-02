@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ TITLE }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <!---
+    <link rel="shortcut icon" href="/static/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/static/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/static/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/static/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/static/ico/apple-touch-icon-57-precomposed.png"> -->
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+    <link rel="stylesheet" href="/resources/demos/style.css" />
+    <script>
+        $(function() {
+          $(".update_page").change(function(){
+            $(".query_form").submit();
+          });
+          $(".submit_button").change(function(){
+            $(".query_form").submit();
+          })
+        });
+    </script>
+
+
+
+
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+      google.load("visualization", "1", {packages:["corechart", 'table']});
+      google.setOnLoadCallback(drawTable);
+      google.setOnLoadCallback(drawCharts);
+
+      var currentquestion1 = '{{currentquestion1}}';
+      var currentquestion2 = '{{currentquestion2}}';
+
+      var summary_data = '{{summary_data}}';
+      var parsestring = summary_data.replace(/&quot;/g, "\"");
+      var summary_output_object = JSON.parse(parsestring);
+      function drawCharts(){
+        if ('{{chart_class}}' == "ScatterChart"){
+          var options = {
+            title: currentquestion1 + " " + currentquestion2,
+            hAxis: {title: currentquestion1},
+            vAxis: {title: currentquestion2}
+
+          };
+          summary_output_object.unshift([currentquestion1, currentquestion2]);
+        }
+        else if ('{{chart_class}}' == "LineChart"){
+          summary_output_object.unshift([currentquestion1, currentquestion2]);
+          var options = {
+            title: "Data by Date"
+          };        
+
+        }
+        else if ('{{chart_class}}' == "ColumnChart"){
+          var options = {
+            title: currentquestion1 + " by " + currentquestion2,
+            hAxis: {title: currentquestion1}
+          };  
+        }
+        else {
+          var options = {
+            title: "Summary of " + currentquestion1
+
+          };
+          summary_output_object.unshift(["Question", "Response"]);
+        }
+        console.log(summary_output_object);
+        
+        var summary_output_data = google.visualization.arrayToDataTable(summary_output_object);
+        
+        var chart = new google.visualization.{{chart_class}}(document.getElementById("summary_info"));
+        chart.draw(summary_output_data, options);
+      }
+
+      
+      function drawTable() {
+        var data = new google.visualization.DataTable();
+        var mysummarydata = summary_output_object.slice();
+        if ('{{chart_class}}' == "ScatterChart"){
+          data.addColumn('number', currentquestion1);
+          data.addColumn('number', currentquestion2); 
+        }
+        else if ('{{chart_class}}' == "ColumnChart"){
+          //pop first array item
+          data.addColumn('string', summary_output_object[0][0])
+          data.addColumn('number', summary_output_object[0][1]);
+          data.addColumn('number', summary_output_object[0][2]); 
+          mysummarydata.splice(0, 1);
+          
+        } 
+        else {
+          data.addColumn('string', 'Question Choice');
+          data.addColumn('number', 'Response'); 
+        }
+
+        data.addRows(mysummarydata);
+        var table = new google.visualization.Table(document.getElementById('table_div'));
+        table.draw(data, {showRowNumber: false});
+      }
+      
+    </script>
+    
+  </head>
+
+  <body>
+
+    {% include "upperblock.html" %}
+
+     <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Choose the following options</h2>
+                 <p>
+                  <form action="/avanse/charts/{{ chart_type }}" class="query_form" method="get">
+                    <select name="survey_name" class="update_page">
+                      {{survey_options|safe}}
+                    </select>
+                    <p>Survey Questions ({{question_options1_type}})</p><select name="question1" class="update_page">
+                      {{question_options1|safe}}
+                    </select>
+
+                    {{freqquestion|safe}}
+
+                    <p>Survey Questions ({{question_options2_type}})</p><select {{is_disabled}} name="question2" class="update_page">
+                      {{question_options2|safe}}
+                    </select>
+                    <p>
+                    <input type="submit" id="Submit" class="submit_button" />
+                  </p>
+
+                  </form>
+                </p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+    <div class="container-fluid">
+      <div class="row-fluid">  
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Summary Info</h2>
+                 <p><div id="summary_info" style="width:900px;height:500px;"></div></p>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+    <div class="container-fluid">
+      <div class="row-fluid">
+
+
+          <div class="row-fluid">
+            <div class="span4">
+              <h2>Detailed Information</h2>
+              <div id="table_div" style="width:900px;height:500px;"></div>
+            </div><!--/span-->
+
+          </div><!--/row-->
+
+        </div><!--/span-->
+      </div><!--/row-->
+
+
+      <hr>
+
+      <footer>
+        <p>&copy; Company 2012</p>
+      </footer>
+
+    </div>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+
+  </body>
+</html>
