@@ -255,12 +255,20 @@ def getQuestions(currentsurvey, groupitems = True):
     myobject = formdata.get_info()
     question_options = {'all':[], 'string':[], 'numeric':[], 'datetime':[], "bytype":{}, 'grouped':{}}
 
+
+
     for itemkey in myobject['schema'].keys():
+
+        geosplit = itemkey.split("_")
+        isgeo = False
+        if (geosplit[-1] not in ['latitude', 'longitude']):
+            print "found one ", itemkey
+            isgeo = True
 
 
         itemkeysplit =  itemkey.split("__", 1)
 
-        if len(itemkeysplit) == 1 or not groupitems:
+        if len(itemkeysplit) == 1 or not groupitems or isgeo != True:
             if (myobject['schema'][itemkey]['simpletype'] in ["integer", "decimal", "float"]):
                 question_options['bytype'][itemkey] = "numeric"
                 question_options['numeric'].append([myobject['schema'][itemkey]['label'], itemkey])
@@ -294,6 +302,8 @@ def getQuestions(currentsurvey, groupitems = True):
                 question_options['bytype'][groupedname] = "other"
             question_options['all'].append([myobject['schema'][itemkey]['label'], groupedname])
             question_options['grouped'][groupedname] = [itemkey]
+
+    print "the type", question_options['bytype']['sectiona__geo_location_latitude']
 
     return question_options
 
@@ -433,6 +443,15 @@ def tables(request):
         d['questionnumber_options'] = "<option value=''>Please Select a Survey</option>"
         d['column_value_options'] = "<option value=''>Please Select a Survey</option>"
         return render_to_response('tables.html', d)
+    question_options = getQuestions(currentsurvey)
+
+
+    d, summary_data = buildTable(request, question_options, currentsurvey, d, submitbutton)
+
+    return render_to_response('tables.html', d)
+
+
+def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = "passthrough"):
 
 
     questionstring = request.GET.get("questionstring", "")
@@ -447,7 +466,7 @@ def tables(request):
     todate = request.GET.get("todate", "")
     columnselect = request.GET.getlist("columnselect", "")
 
-    question_options = getQuestions(currentsurvey)
+    
 
     d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
 
@@ -467,15 +486,15 @@ def tables(request):
 
     d['columnselect_value_options'] = makeSurveyOptions(question_options['all'], columnselect)
 
-    if (submitbutton == ""):
-        return render_to_response('tables.html', d)
-
-
-
     d['error_messages'] = ""
 
     if (columnselect == ['']):
         d['error_messages'] += "<li>You must select a column to display</li>"
+
+
+
+    if (submitbutton == ""):
+        return d, None
 
 
     #build the query
@@ -565,6 +584,7 @@ def tables(request):
     d['addColumn_commands'] = addColumn_commands;
 
 
+
     summary_data = []
     for therow in dataresults:
         temprow = []
@@ -617,160 +637,19 @@ def tables(request):
     json.dump(summary_data, io, encoding='utf-8', ensure_ascii=False)
     d['summary_data'] = io.getvalue()
 
-    return render_to_response('tables.html', d)
+    return d, summary_data
 
-
-
-
-def createAJAXTable(request):
-
-    currentsurvey = request.GET.get("survey_name", "")
-    submitbutton = request.GET.get("submit_button", "")
-
-
-    questionstring = request.GET.get("questionstring", "")
-    questionstring_search = request.GET.get("questionstring_search", "")
-
-    questionnumber = request.GET.get("questionnumber", "")
-    questionnumber_operator = request.GET.get("questionnumber_operator", "")
-    questionnumber_search = request.GET.get("questionnumber_search", "")
-
-    questiondate = request.GET.get("questiondate", "")
-    fromdate = request.GET.get("fromdate", "")
-    todate = request.GET.get("todate", "")
-    columnselect = request.GET.getlist("columnselect", "")
-
-    question_options = getQuestions(currentsurvey)
-
-
-
-    #build the query
-    thequery = {}
-
-    if questionstring != "":
-        if questionstring_search != "":
-            if questionstring in question_options['grouped'].keys():
-                if ("$or" not in thequery.keys()):
-                    thequery["$or"] = []
-                #need to expand it
-                for therow in question_options['grouped'][questionstring]:
-                    thequery["$or"].append({therow: questionstring_search})
-            else:  
-                thequery[questionstring] = questionstring_search
-
-
-    if questionnumber != "":
-        if questionnumber_search != "":
-            if questionnumber in question_options['grouped'].keys():
-                if ("$or" not in thequery.keys()):
-                    thequery["$or"] = []
-                for therow in question_options['grouped'][questionnumber]:
-                    if questionnumber_operator == "" or questionnumber_operator == "equal":
-                        thequery['$or'].append({therow: float(questionnumber_search)}) 
-                    else:
-                        thequery['$or'].append({therow: {questionnumber_operator: float(questionnumber_search)}}) 
-            else:
-                if questionnumber_operator == "" or questionnumber_operator == "equal":
-                    thequery[questionnumber] = float(questionnumber_search)
-                else:
-                    thequery[questionnumber] = {questionnumber_operator: float(questionnumber_search)}
-
-
-    if questiondate != "":
-        if fromdate != "" and todate != "":
-            if questionnumber in question_options['grouped'].keys():
-                if ("$or" not in thequery.keys()):
-                    thequery["$or"] = []
-                for therow in question_options['grouped'][questionnumber]:
-                    if fromdate != "":
-                        thequery['$or'] = {therow: {"$gt": fromdate}}
-                    if todate != "":
-                        thequery['$or'] = {therow: {"$lt": todate}}
-            else:
-                if fromdate != "":
-                    thequery[questiondate] = {"$gt": fromdate}
-                if todate != "":
-                    thequery[questiondate] = {"$lt": todate}
-
-
-
-    thedataset = Dataset(currentsurvey)
-
-    #check if the column select has any grouped items
-    expandedcolumnselect = []
-    for therow in columnselect:
-        if (therow in question_options['grouped'].keys()):
-            for subrow in question_options['grouped'][therow]:
-                expandedcolumnselect.append(subrow)
-        else:
-            expandedcolumnselect.append(therow)
-
-
-    dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
-
-
-    summary_data = []
-    temprow = []
-    for thecolumn in columnselect:
-        if thecolumn == "":
-            continue
-        temprow.append(thecolumn)
-    summary_data.append(temprow)
-
-
-    for therow in dataresults:
-        temprow = []
-        for thecol in columnselect:
-            if thecol == "":
-                continue
-
-            if thecol in question_options['grouped'].keys():
-                dataoutputarray = []
-                for thesubrow in question_options['grouped'][thecol]:
-                    if therow[thesubrow] != "null":
-                        if type(therow[thesubrow]) is unicode:
-                            dataoutputarray.append(therow[thesubrow])
-                        else:
-                            dataoutputarray.append(str(therow[thesubrow]))
-                dataoutput = ",".join(dataoutputarray)
-            else:
-                dataoutput = therow[thecol]
-
-
-            if (question_options['bytype'][thecol] == "numeric" and thecol not in question_options['grouped'].keys()):
-                if dataoutput == "null":
-                    temprow.append(0)
-                else:
-                    temprow.append(dataoutput)
-            elif (question_options['bytype'][thecol] == "datetime"):
-                if dataoutput == "null":
-                    temprow.append("None")
-                else:
-                    temprow.append(str(dataoutput))
-            elif (type(dataoutput) is unicode):
-                if dataoutput == "null":
-                    temprow.append("None")
-                else:
-                    temprow.append(dataoutput.replace('"', "'"))
-            elif (type(dataoutput) is bool):
-                if dataoutput == "null":
-                    temprow.append("None")
-                else:
-                    temprow.append(str(dataoutput))
-            else:
-                if dataoutput == "null":
-                    temprow.append("None")
-                else:
-                    temprow.append(dataoutput)
-        summary_data.append(temprow)
-
-    return summary_data
 
 def getfiletables(request):
 
+    currentsurvey = request.GET.get("survey_name", "")
+    question_options = getQuestions(currentsurvey)
+
     fileHandle = StringIO()
     spamwriter = csv.writer(fileHandle)
-    summary_data = createAJAXTable(request)
+
+    d, summary_data = buildTable(request, question_options, currentsurvey)
+
     for row in summary_data:
         temprow = []
         for p in row:
