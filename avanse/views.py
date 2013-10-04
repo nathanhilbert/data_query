@@ -647,6 +647,9 @@ def getfiletables(request):
     spamwriter = csv.writer(fileHandle)
 
     d, summary_data = buildTable(request, question_options, currentsurvey)
+    columnselect = request.GET.getlist("columnselect", "")
+    columnselect.remove("")
+    summary_data.insert(0, columnselect)
 
     for row in summary_data:
         temprow = []
