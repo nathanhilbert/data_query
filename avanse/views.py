@@ -303,8 +303,6 @@ def getQuestions(currentsurvey, groupitems = True):
             question_options['all'].append([myobject['schema'][itemkey]['label'], groupedname])
             question_options['grouped'][groupedname] = [itemkey]
 
-    print "the type", question_options['bytype']['sectiona__geo_location_latitude']
-
     return question_options
 
 
