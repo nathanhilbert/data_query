@@ -10,6 +10,7 @@
 
     <!-- Le styles -->
     <link href="/static/css/bootstrap.css" rel="stylesheet">
+      <link rel="stylesheet" href="/static/css/chosen.css">
     <style type="text/css">
       body {
         padding-top: 60px;
@@ -41,6 +42,7 @@
     
 
     <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+    <script src="/static/js/chosen.jquery.min.js" type="text/javascript"></script>
     <script type="text/javascript" src="/static/js/jquery.fileDownload.js"></script>
     
     <script>
@@ -82,7 +84,9 @@
         }
         });
         $(".accordion").accordion({autoHeight: true});
+        //$(".chosenobject").chosen();
         });
+        
     </script>
 
 
@@ -153,11 +157,14 @@
               <h3><a href="#">Query by string</a></h3>
                 <div>
 
-                    <p>Search by string</p><select name="questionstring" class="questionclass" value="{{questionstring_value}}">
+                    <p>Search by string</p><select name="questionstring" class="questionclass update_page" value="{{questionstring_value}}">
                       {{questionstring_options|safe}}
                     </select>
 
-                    <p>Value equals</p><input type="text" name="questionstring_search" class="questionclass" value="{{questionstring_search_option}}" />
+                    <p>Value equals</p>
+                    <select multiple name="questionstring_search" class="questionclass chosenobject">
+                      {{questionstring_search_options|safe}}
+                    </select>
                 </div>
               <h3><a href="#">Query by number</a></h3>
                 <div>

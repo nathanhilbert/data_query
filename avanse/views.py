@@ -261,7 +261,7 @@ def getQuestions(currentsurvey, groupitems = True):
 
         geosplit = itemkey.split("_")
         isgeo = False
-        if (geosplit[-1] not in ['latitude', 'longitude']):
+        if (geosplit[-1] in ['latitude', 'longitude']):
             print "found one ", itemkey
             isgeo = True
 
@@ -428,6 +428,23 @@ def charts(request, chart_type):
 
     return render_to_response('charts.html', d)
 
+
+
+def getValueOptions(currentsurvey, columnselect, thevalue = ""):
+
+    thedataset = Dataset(currentsurvey)
+
+    dataresults = thedataset.get_data(select=[columnselect])
+    optionarray = []
+    for therow in dataresults:
+        if ([str(therow[columnselect]), str(therow[columnselect])] not in optionarray):
+            if str(therow[columnselect]) != "null":
+                optionarray.append([str(therow[columnselect]), str(therow[columnselect])])
+    print optionarray
+    return makeSurveyOptions(optionarray, thevalue)
+
+
+
 def tables(request):
     #define the necessary template options
     d = {"TITLE": "Tables of Data"}
@@ -443,6 +460,23 @@ def tables(request):
         return render_to_response('tables.html', d)
     question_options = getQuestions(currentsurvey)
 
+    questionstring = request.GET.get("questionstring", "")
+    questionstring_search = request.GET.getlist("questionstring_search")
+    if (questionstring != "" and len(questionstring_search) < 1):
+        d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
+        d['error_messages'] = "You must select a value with the query by text"
+        d['questionstring_search_options'] = getValueOptions(currentsurvey, questionstring)
+    elif (questionstring != ""):
+        d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
+        d['questionstring_search_options'] = getValueOptions(currentsurvey, questionstring, questionstring_search)
+    else:
+        d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
+
+
+
+
+    
+
 
     d, summary_data = buildTable(request, question_options, currentsurvey, d, submitbutton)
 
@@ -453,7 +487,7 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
 
 
     questionstring = request.GET.get("questionstring", "")
-    questionstring_search = request.GET.get("questionstring_search", "")
+    questionstring_search = request.GET.getlist("questionstring_search", "")
 
     questionnumber = request.GET.get("questionnumber", "")
     questionnumber_operator = request.GET.get("questionnumber_operator", "")
@@ -464,11 +498,6 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
     todate = request.GET.get("todate", "")
     columnselect = request.GET.getlist("columnselect", "")
 
-    
-
-    d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
-
-    d['questionstring_search_option'] = questionstring_search
 
     d['questionnumber_options'] = makeSurveyOptions(question_options['numeric'], questionnumber)
 
@@ -499,20 +528,34 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
     thequery = {}
 
     if questionstring != "":
-        if questionstring_search != "":
-            editedquestion = questionstring_search
-            if editedquestion in ["True", "true"]:
-                editedquestion = True
-            elif editedquestion in ["False", "false"]:
-                editedquestion = False
+        if (len(questionstring_search) > 0 and questionstring_search != ['']):
+            hasnotexist = False
+            myquestionstrings = []
+            for editedquestion in questionstring_search:
+                if editedquestion in ["True", "true"]:
+                    myquestionstrings.append(True)
+                elif editedquestion in ["False", "false"]:
+                    myquestionstrings.append(False)
+                elif editedquestion in ["null", "none", "Null"]:
+                    hasnotexist = True
+                else:
+                    myquestionstrings.append(editedquestion)
+
             if questionstring in question_options['grouped'].keys():
                 if ("$or" not in thequery.keys()):
                     thequery["$or"] = []
                 #need to expand it
                 for therow in question_options['grouped'][questionstring]:
-                    thequery["$or"].append({therow: editedquestion})
+                    if hasnotexist:
+                        thequery["$or"].append({therow: {"$or": {"$in": myquestionstrings, "$exists": True}}})
+                    else:
+                        thequery["$or"].append({therow: {"$in": myquestionstrings}})
             else:  
-                thequery[questionstring] = editedquestion
+                if hasnotexist:
+                    thequery["$or"] = [{questionstring: {"$in": myquestionstrings}}, {questionstring:{"$exists": False}}]
+                    #thequery[questionstring] = {"$in": myquestionstrings, "$exists": True}
+                else:
+                    thequery[questionstring] = {"$in": myquestionstrings}
         else:
             d['error_messages'] += "<li>You have selected a column of type string to search, but you have not defined a search value</li>"
 
@@ -536,6 +579,9 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
         else:
             d['error_messages'] += "<li>You have selected a column of type number to search, but you have not defined a search value</li>"
 
+
+
+    print "here is the from date *********", fromdate
     if questiondate != "":
         if fromdate == "" and todate == "":
             d['error_messages'] += "<li>You have selected a column of type date to search, but you have not defined a search value</li>"
@@ -544,15 +590,19 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
                 if ("$or" not in thequery.keys()):
                     thequery["$or"] = []
                 for therow in question_options['grouped'][questionnumber]:
+                    outputobject = {}
                     if fromdate != "":
-                        thequery['$or'] = {therow: {"$gt": fromdate}}
+                        outputobject['$gt'] = fromdate
                     if todate != "":
-                        thequery['$or'] = {therow: {"$lt": todate}}
+                        outputobject['$lt'] = todate
+                    thequery['$or'].append({therow: outputobject})
             else:
+                outputobject = {}
                 if fromdate != "":
-                    thequery[questiondate] = {"$gt": fromdate}
+                    outputobject['$gt'] = fromdate
                 if todate != "":
-                    thequery[questiondate] = {"$lt": todate}
+                    outputobject['$lt'] = todate
+                thequery[questiondate] = outputobject
 
 
 
@@ -567,8 +617,9 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
         else:
             expandedcolumnselect.append(therow)
 
-
+    print thequery
     dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
+
 
 
     addColumn_commands = ""
