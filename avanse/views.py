@@ -1,6 +1,12 @@
 from django.shortcuts import render_to_response
 from django.shortcuts import HttpResponse
 from django.template import RequestContext
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+
+
+from avanse.models import Document
+from avanse.forms import DocumentForm
 
 
 import urllib2, base64
@@ -13,178 +19,121 @@ from pybamboo.dataset import Dataset
 import time
 from random import randint
 import csv
+import os
+
+def readFileBamboo(f, currentsurvey, d):
 
 
+    csvreader = csv.reader(f)
+    headers = csvreader.next()
 
+    thedataset = Dataset(currentsurvey)
+    myinfo = thedataset.get_info()
+    theinfo = myinfo['schema']  
+    dataresults = thedataset.get_data(select=headers)
 
-def getChartVars(currentsurvey, FREQ = 'D', fromdate="None", todate="None"):
+    numbersuccessful = 0
+    numberfail = 0
+    numberskipped = 0
 
-
-
-
-
-    #this will get all of the data
-    returnobj = {"freq_survey_hour": [], "freq_device_output_json":[], "freq_candle_time_output":[]}
-
-
-    dataset_id = currentsurvey
-
-    formdata = Dataset(dataset_id)
-
-    if (fromdate != "None" and todate != "None" and fromdate != None and todate != None):
-        print "hitting here"
-        myobject = formdata.get_data(select=["hidstarttime", "end", "hiddeviceid"], query={"end": {"$gte":fromdate, "$lte":todate}})
-    else:
-        myobject = formdata.get_data(select=["hidstarttime", "end", "hiddeviceid"])
-
-    print "got the data"
-    if (len(myobject) == 0):
-        return returnobj
-    #print myobject[0]['hidstarttime']['$date']
-    #print myobject[0]['end']['$date']
-    #print myobject[0]['hiddeviceid']
-
-    data = []
-    for obj in myobject:
-        data.append([time.mktime(obj['hidstarttime'].timetuple()), 
-                     time.mktime(obj['end'].timetuple()), 
-                     obj['hiddeviceid'],
-                     time.mktime(obj['end'].timetuple()) - time.mktime(obj['hidstarttime'].timetuple())])
-
-
-
-    transdata = zip(*data)
-
-
-    mindate = min(transdata[1])
-    maxdate = max(transdata[1])
-
-    mindate = datetime.fromtimestamp(min(transdata[1]))
-    maxdate = datetime.fromtimestamp(max(transdata[1]))
-    print "min date", mindate
-    print "maxdate", maxdate
-
-    print "strating that rng"
-
-    rng = date_range(start=mindate, end=maxdate, freq=FREQ)
-    print "actually loaded the date range"
-    freqhour = []
-    print "we are calculating ", len(rng), "by", len(transdata[1])
-
-    #verify that we are not getting stuck here
-    if len(rng) > 300:
-        freq_survey_hour = []
-    else:
-
-        for z in range(len(rng)):
-            freqhour.append(0)
-            currentindex = len(freqhour)-1
-            for d in transdata[1]:
-                try:
-                    thesample = datetime.fromtimestamp(d)
-                    if (thesample > rng[z] and thesample < rng[z+1]):
-                        freqhour[currentindex] += 1
-                except:
-                    pass
-        print "finished doing the rng"
-
-        timestring = []
-        for z in rng:
-            timestring.append(z.strftime('%m/%d/%Y %I:%M'))
-
-
-        freq_survey_hour = zip(timestring, freqhour)
-
-    io = StringIO()
-    json.dump(freq_survey_hour, io)
-    returnobj['freq_survey_hour_json'] =  io.getvalue()
-    print returnobj['freq_survey_hour_json']
-
-    print "doing the deices now"
-    #get data for the freq by device
-    freq_device = {}
-    for did in transdata[2]:
-        if (did in freq_device.keys()):
-            freq_device[did] += 1
+    for row in csvreader:
+        thedict = {}
+        for head, subrow in zip(headers, row):
+            rawvalue = ""
+            try:
+                rawtype  = theinfo[head]["simpletype"]
+            except:
+                d['messages'] = d['messages'], "<br/>COLUMN", head ," DID NOT MATCH. VERIFY THE COLUMNS IN THE CSV AGAINST THE LIST BELOW"
+                return d
+            if rawtype == "float":
+                if subrow != "":
+                    rawvalue = float(subrow)
+                else:
+                    rawvalue = 0
+            elif rawtype == "integer":
+                if subrow != "":
+                    rawvalue = int(subrow)
+                else:
+                    rawvalue = 0
+            else:
+                rawvalue = subrow
+            thedict[head] = rawvalue
+        indexexists = False
+        for aresult in dataresults:
+            if aresult['theindex'] == thedict['theindex']:
+                indexexists = True
+                break
+        if not indexexists:
+            theresult = thedataset.update_data([thedict])
+            print "the result", theresult, "and the index", thedict['theindex']
+            if theresult:
+                numbersuccessful += 1
+            else:
+                numberfail += 1
         else:
-            freq_device[did] = 1
-    freq_device_output = []
-    for freqkey in freq_device.keys():
-        freq_device_output.append([str(freqkey),freq_device[freqkey] ])
-    io = StringIO()
-    json.dump(freq_device_output, io)
-    returnobj['freq_device_output_json'] = io.getvalue()
+            print "the skipped and the index", thedict['theindex']
+            numberskipped += 1
+    print thedataset.get_data()
+
+    d['messages'] = d['messages'], "<br/>Skipped:", numberskipped, "<br/>Successful:", numbersuccessful, "<br/>Failed:", numberfail
+    return d
 
 
-    print "startin avg time"
-    #get data for the average time
-    freq_avg_time_array = {}
-    for row in data:
-        #device id
-        did = row[2]
-        avgtime = row[3]
-        if (did in freq_avg_time_array.keys()):
-            freq_avg_time_array[did].append(avgtime)
-        else:
-            freq_avg_time_array[did] = [avgtime]
-    freq_candle_time = []
-    for didkey in freq_avg_time_array.keys():
-        stddev = np.std(freq_avg_time_array[didkey])
-        mean = np.mean(freq_avg_time_array[didkey])
-        freq_candle_time.append([str(didkey), 
-                                 min(freq_avg_time_array[didkey])/60,
-                                (mean - stddev/2)/60,
-                                (mean + stddev/2)/60,
-                                max(freq_avg_time_array[didkey])/60
-                                ])
-    io = StringIO()
-    json.dump(freq_candle_time, io)
-    returnobj['freq_candle_time_output'] = io.getvalue()
+def upload(request):
+    d = {"TITLE":"Upload content"}
 
+    d['messages'] = "File must be in CSV format and must have on column called <<theindex>>"
     
+    currentsurvey = request.POST.get("survey_name", "")
+    d['currentsurvey'] = currentsurvey
+    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"], ["uploadtest", "a4e97f4787c5449490d664edb7542e00"]]
+    d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
+    if (currentsurvey == ""):
+            return render_to_response(
+                    'upload.html',
+                    d,
+                    context_instance=RequestContext(request)
+                )
 
-    return returnobj
+    # Handle file upload
+    if (request.method == 'POST' and len(request.FILES) > 0):
+        form = DocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            data = request.FILES['docfile'].read()
+            print data
+            f = StringIO(data)
+            d = readFileBamboo(f, currentsurvey, d) 
 
 
 
 
-def home(request):
+    #get all of the items
 
-    currentsurvey = request.GET.get("survey_name", "cd1bfa34d6364b85b9ad0c03fad78730")
-    frequency = request.GET.get('frequency', 'M')
-    fromdate = request.GET.get('fromdate')
-    if not fromdate:
-        fromdate = "None"
-    todate = request.GET.get('todate')
-    if not todate:
-        todate = "None"
+    myquestions = getQuestions(currentsurvey, groupitems = False)
+    column_list = ""
+    for thecolumn in myquestions['all']:
+        thetype = "unknown"
+        try:
+            thetype = myquestions['bytype'][thecolumn[0]]
+        except:
+            pass
 
-    #http://bamboo.io/datasets/
-    surveys_options_info = [["Please Select One", "cd1bfa34d6364b85b9ad0c03fad78730"],["inventaire_agro_entreprise","f0ec5bfb4f9e4bc99b4046073de3b7bb"],["FPSurveyKikwit29", "cd1bfa34d6364b85b9ad0c03fad78730"],["BaseLineBasCongo4", "6e2fd12684f94816a21ea5dd9df5336e"],["CDSurvey19", "63bb84836fde4dcb9905127c9751770b"],["FPPMDAIB5", "7cf121445a65466ca285e3049602373b"]]
-    survey_options = ""
-    d = getChartVars(currentsurvey, frequency, fromdate, todate)
-    if not d:
-        d = {}
-    for soi in surveys_options_info:
-        selectedval = ""
-        if currentsurvey == soi[1]:
-            selectedval = "selected"
-        tempoutput = "<option value='" + soi[1] + "' " + selectedval + ">" + soi[0] + "</option>"
-        survey_options += tempoutput
-    d['survey_options'] = survey_options
+        column_list += "<li>" + thecolumn[0] + " - " + thetype + "</li>"
 
-    freq_options = [['A', 'Year'],['M', 'Month'],['W', 'Week'],['D', 'Day'], ['H', 'Hour']]
-    freq_options_output = ""
-    for freq in freq_options:
-        selectedval = ""
-        if frequency == freq[0]:
-            selectedval = "selected"
-        freq_options_output += "<option value='" + freq[0] + "' " + selectedval + ">" + freq[1] + "</option>"
-    d['freq_options'] = freq_options_output
-    d['fromdate_default'] = fromdate
-    d['todate_default'] = todate
+    d['column_list'] = column_list
 
-    return render_to_response('home.html', d)
+
+    form = DocumentForm() # A empty, unbound form
+    d['form'] = form
+    # Render list page with the documents and the form
+    return render_to_response(
+        'upload.html',
+        d,
+        context_instance=RequestContext(request)
+    )
+
+
+
 
 def makeSurveyOptions(myarray, selected=""):
     survey_options = "<option value='' selected>Please select an option</option>"
@@ -451,7 +400,7 @@ def tables(request):
 
     currentsurvey = request.GET.get("survey_name", "")
     submitbutton = request.GET.get("submit_button", "")
-    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"]]
+    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"], ["uploadtest", "176b7c7313194078b8aff67f0ac2361b"]]
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['questionstring_options'] = "<option value=''>Please Select a Survey</option>"
