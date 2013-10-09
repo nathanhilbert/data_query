@@ -132,10 +132,10 @@ INSTALLED_APPS = (
 )
 
 #adding lockdown settings
-#INSTALLED_APPS += ('lockdown', )
-#MIDDLEWARE_CLASSES += ('lockdown.middleware.LockdownMiddleware', )
-#LOCKDOWN_PASSWORDS = ('yourpasswordhere', )
-#LOCKDOWN_FORM = 'lockdown.forms.LockdownForm'
+INSTALLED_APPS += ('lockdown', )
+MIDDLEWARE_CLASSES += ('lockdown.middleware.LockdownMiddleware', )
+LOCKDOWN_PASSWORDS = ('haitiavanse', )
+LOCKDOWN_FORM = 'lockdown.forms.LockdownForm'
 
 
 TEMPLATE_DIRS = (

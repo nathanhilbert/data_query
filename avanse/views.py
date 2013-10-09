@@ -4,6 +4,8 @@ from django.template import RequestContext
 from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 
+from lockdown.decorators import lockdown
+
 
 from avanse.models import Document
 from avanse.forms import DocumentForm
@@ -78,7 +80,7 @@ def readFileBamboo(f, currentsurvey, d):
     d['messages'] = d['messages'], "<br/>Skipped:", numberskipped, "<br/>Successful:", numbersuccessful, "<br/>Failed:", numberfail
     return d
 
-
+@lockdown()
 def upload(request):
     d = {"TITLE":"Upload content"}
 
