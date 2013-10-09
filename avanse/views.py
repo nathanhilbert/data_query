@@ -22,107 +22,92 @@ import time
 from random import randint
 import csv
 import os
+from os.path import join
+from django.conf import settings
+import pickle
 
-def readFileBamboo(f, currentsurvey, d):
+def readFileBamboo(data, d):
+    mydataset = Dataset(content=data)
 
+    if (mydataset.id):
+        d['messages'] = d['messages'], "<br/>Your new dataset is <strong>", mydataset.id, "</strong><br/>It can take up to hour for the data to be ready"
+    else:
+        d['messages'] = d['messages'], "<br/>Your dataset did not upload.  Please try again"
 
-    csvreader = csv.reader(f)
-    headers = csvreader.next()
-
-    thedataset = Dataset(currentsurvey)
-    myinfo = thedataset.get_info()
-    theinfo = myinfo['schema']  
-    dataresults = thedataset.get_data(select=headers)
-
-    numbersuccessful = 0
-    numberfail = 0
-    numberskipped = 0
-
-    for row in csvreader:
-        thedict = {}
-        for head, subrow in zip(headers, row):
-            rawvalue = ""
-            try:
-                rawtype  = theinfo[head]["simpletype"]
-            except:
-                d['messages'] = d['messages'], "<br/>COLUMN", head ," DID NOT MATCH. VERIFY THE COLUMNS IN THE CSV AGAINST THE LIST BELOW"
-                return d
-            if rawtype == "float":
-                if subrow != "":
-                    rawvalue = float(subrow)
-                else:
-                    rawvalue = 0
-            elif rawtype == "integer":
-                if subrow != "":
-                    rawvalue = int(subrow)
-                else:
-                    rawvalue = 0
-            else:
-                rawvalue = subrow
-            thedict[head] = rawvalue
-        indexexists = False
-        for aresult in dataresults:
-            if aresult['theindex'] == thedict['theindex']:
-                indexexists = True
-                break
-        if not indexexists:
-            theresult = thedataset.update_data([thedict])
-            print "the result", theresult, "and the index", thedict['theindex']
-            if theresult:
-                numbersuccessful += 1
-            else:
-                numberfail += 1
-        else:
-            print "the skipped and the index", thedict['theindex']
-            numberskipped += 1
-    print thedataset.get_data()
-
-    d['messages'] = d['messages'], "<br/>Skipped:", numberskipped, "<br/>Successful:", numbersuccessful, "<br/>Failed:", numberfail
     return d
+
+# def readFileBamboo(f, currentsurvey, d):
+
+
+#     csvreader = csv.reader(f)
+#     headers = csvreader.next()
+
+#     thedataset = Dataset(currentsurvey)
+#     myinfo = thedataset.get_info()
+#     theinfo = myinfo['schema']  
+#     dataresults = thedataset.get_data(select=headers)
+
+#     numbersuccessful = 0
+#     numberfail = 0
+#     numberskipped = 0
+
+#     for row in csvreader:
+#         thedict = {}
+#         for head, subrow in zip(headers, row):
+#             rawvalue = ""
+#             try:
+#                 rawtype  = theinfo[head]["simpletype"]
+#             except:
+#                 d['messages'] = d['messages'], "<br/>COLUMN", head ," DID NOT MATCH. VERIFY THE COLUMNS IN THE CSV AGAINST THE LIST BELOW"
+#                 return d
+#             if rawtype == "float":
+#                 if subrow != "":
+#                     rawvalue = float(subrow)
+#                 else:
+#                     rawvalue = 0
+#             elif rawtype == "integer":
+#                 if subrow != "":
+#                     rawvalue = int(subrow)
+#                 else:
+#                     rawvalue = 0
+#             else:
+#                 rawvalue = subrow
+#             thedict[head] = rawvalue
+#         indexexists = False
+#         for aresult in dataresults:
+#             if aresult['theindex'] == thedict['theindex']:
+#                 indexexists = True
+#                 break
+#         if not indexexists:
+#             theresult = thedataset.update_data([thedict])
+#             print "the result", theresult, "and the index", thedict['theindex']
+#             if theresult:
+#                 numbersuccessful += 1
+#             else:
+#                 numberfail += 1
+#         else:
+#             print "the skipped and the index", thedict['theindex']
+#             numberskipped += 1
+
+#     d['messages'] = d['messages'], "<br/>Skipped:", numberskipped, "<br/>Successful:", numbersuccessful, "<br/>Failed:", numberfail
+#     return d
 
 @lockdown()
 def upload(request):
     d = {"TITLE":"Upload content"}
 
-    d['messages'] = "File must be in CSV format and must have on column called <<theindex>>"
+    d['messages'] = "File must be in CSV format and the first row must have the names of the columns"
     
-    currentsurvey = request.POST.get("survey_name", "")
-    d['currentsurvey'] = currentsurvey
-    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"], ["uploadtest", "a4e97f4787c5449490d664edb7542e00"]]
-    d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
-    if (currentsurvey == ""):
-            return render_to_response(
-                    'upload.html',
-                    d,
-                    context_instance=RequestContext(request)
-                )
 
     # Handle file upload
     if (request.method == 'POST' and len(request.FILES) > 0):
         form = DocumentForm(request.POST, request.FILES)
         if form.is_valid():
             data = request.FILES['docfile'].read()
-            print data
-            f = StringIO(data)
-            d = readFileBamboo(f, currentsurvey, d) 
+            #f = StringIO(data)
+            d = readFileBamboo(data, d) 
 
 
-
-
-    #get all of the items
-
-    myquestions = getQuestions(currentsurvey, groupitems = False)
-    column_list = ""
-    for thecolumn in myquestions['all']:
-        thetype = "unknown"
-        try:
-            thetype = myquestions['bytype'][thecolumn[0]]
-        except:
-            pass
-
-        column_list += "<li>" + thecolumn[0] + " - " + thetype + "</li>"
-
-    d['column_list'] = column_list
 
 
     form = DocumentForm() # A empty, unbound form
@@ -133,6 +118,112 @@ def upload(request):
         d,
         context_instance=RequestContext(request)
     )
+
+
+@lockdown()
+def managesurveys(request):
+    d = {"TITLE":"Upload content"}
+    path = join(settings.MEDIA_ROOT, 'datarepo', 'surveys_avanse.pickle')
+
+    submitbutton = request.POST.get("submit", "")
+
+    if submitbutton != "":
+        #wriate what we have
+
+        numcolumns = int(request.POST.get("numfields", "0"))
+        outputarray = []
+        for thefield in range(numcolumns):
+            valname = request.POST.get("surveyname_" + str(thefield), "")
+            valvalue = request.POST.get("surveyvalue_" + str(thefield), "")
+            if (valname != "" and valvalue != ""):
+                outputarray.append([valname, valvalue])
+        with open(path, 'wb') as f: 
+            surveydata = pickle.dump(outputarray, f)
+
+
+    try:
+        with open(path, 'rb') as f: 
+            surveydata = pickle.load(f)
+    except:
+        surveydata = []
+
+    inputfields = ""
+    counter = 0
+    print surveydata
+    for thesurvey in surveydata:
+        inputfields += '<p><input type="text" name="surveyname_' + str(counter) + '" value="' + thesurvey[0] + '"/><input type="text" name="surveyvalue_' + str(counter) + '" value="' + thesurvey[1] + '"/>'
+        counter +=1
+
+    inputfields += '<p><input type="text" name="surveyname_' + str(counter) + '" value=""/><input type="text" name="surveyvalue_' + str(counter) + '" value=""/>'
+    counter +=1
+    d['inputfields'] = inputfields
+    d['numcolumns'] = counter
+
+
+
+
+
+    # Render list page with the documents and the form
+    return render_to_response(
+        'managesurveys.html',
+        d,
+        context_instance=RequestContext(request)
+    )
+
+
+
+# @lockdown()
+# def upload(request):
+#     d = {"TITLE":"Upload content"}
+
+#     d['messages'] = "File must be in CSV format and must have on column called <<theindex>>"
+    
+#     currentsurvey = request.POST.get("survey_name", "")
+#     d['currentsurvey'] = currentsurvey
+#     surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"], ["uploadtest", "a4e97f4787c5449490d664edb7542e00"]]
+#     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
+#     if (currentsurvey == ""):
+#             return render_to_response(
+#                     'upload.html',
+#                     d,
+#                     context_instance=RequestContext(request)
+#                 )
+
+#     # Handle file upload
+#     if (request.method == 'POST' and len(request.FILES) > 0):
+#         form = DocumentForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             data = request.FILES['docfile'].read()
+#             #f = StringIO(data)
+#             d = readFileBamboo(f, currentsurvey, d) 
+
+
+
+
+#     #get all of the items
+
+#     myquestions = getQuestions(currentsurvey, groupitems = False)
+#     column_list = ""
+#     for thecolumn in myquestions['all']:
+#         thetype = "unknown"
+#         try:
+#             thetype = myquestions['bytype'][thecolumn[0]]
+#         except:
+#             pass
+
+#         column_list += "<li>" + thecolumn[0] + " - " + thetype + "</li>"
+
+#     d['column_list'] = column_list
+
+
+#     form = DocumentForm() # A empty, unbound form
+#     d['form'] = form
+#     # Render list page with the documents and the form
+#     return render_to_response(
+#         'upload.html',
+#         d,
+#         context_instance=RequestContext(request)
+#     )
 
 
 
@@ -256,13 +347,21 @@ def getQuestions(currentsurvey, groupitems = True):
 
     return question_options
 
+def getSurveys():
 
+    path = join(settings.MEDIA_ROOT, 'datarepo', 'surveys_avanse.pickle')
+    try:
+        with open(path, 'rb') as f: 
+            surveydata = pickle.load(f)
+    except:
+        surveydata = []
+    return surveydata
 
 def charts(request, chart_type):
     #define the necessary template options
     d = {"TITLE":"Charts in " + chart_type, "chart_type": chart_type}
     currentsurvey = request.GET.get("survey_name", "")
-    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"]]
+    surveys_options_info = getSurveys()
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['question_options1'] = "<option value=''>Please Select a Survey</option>"
@@ -402,7 +501,7 @@ def tables(request):
 
     currentsurvey = request.GET.get("survey_name", "")
     submitbutton = request.GET.get("submit_button", "")
-    surveys_options_info = [["Inventaire agro-entreprise (IR3)","dd299f7445d14885905664e6dc93319b"],["Inventaire Producteur (IR1)", "baee4539aefb45c58d4aa96dc197fc98"], ["uploadtest", "176b7c7313194078b8aff67f0ac2361b"]]
+    surveys_options_info = getSurveys()
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['questionstring_options'] = "<option value=''>Please Select a Survey</option>"

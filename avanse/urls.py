@@ -9,6 +9,7 @@ urlpatterns = patterns('',
     url(r'^getfile\/tables', 'avanse.views.getfiletables'),
     url(r'^tables', 'avanse.views.tables'),
     url(r'^upload', 'avanse.views.upload'),
+    url(r'^managesurveys', 'avanse.views.managesurveys'),
     url(r'^charts\/(?P<chart_type>\w{0,50})', 'avanse.views.charts'),
 
     
