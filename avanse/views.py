@@ -355,6 +355,7 @@ def getSurveys():
             surveydata = pickle.load(f)
     except:
         surveydata = []
+    print surveydata
     return surveydata
 
 def charts(request, chart_type):
