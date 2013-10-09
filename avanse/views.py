@@ -667,7 +667,6 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
         else:
             expandedcolumnselect.append(therow)
 
-    print thequery
     dataresults = thedataset.get_data(select=expandedcolumnselect,  query=thequery, limit=-1)
 
 
@@ -738,6 +737,22 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
 
     return d, summary_data
 
+def getalldata(request, currentsurvey):
+    thedataset = Dataset(currentsurvey)
+    theinfo = thedataset.get_info()
+    thedata = thedataset.get_data()
+    summary_data = []
+    thecolumns = []
+    for columnkey in theinfo['schema']:
+        thecolumns.append(columnkey)
+    summary_data.append(thecolumns)
+
+    for row in thedata:
+        temprow = []
+        for subkeys in row.keys():
+            temprow.append(row[subkeys])
+        summary_data.append(temprow)
+    return summary_data
 
 def getfiletables(request):
 
@@ -747,10 +762,15 @@ def getfiletables(request):
     fileHandle = StringIO()
     spamwriter = csv.writer(fileHandle)
 
-    d, summary_data = buildTable(request, question_options, currentsurvey)
-    columnselect = request.GET.getlist("columnselect", "")
-    columnselect.remove("")
-    summary_data.insert(0, columnselect)
+    getallcolumns = False
+    if (request.GET.get("getalldata", "") != ""):
+        summary_data = getalldata(request, currentsurvey)
+    else:
+        d, summary_data = buildTable(request, question_options, currentsurvey)
+
+        columnselect = request.GET.getlist("columnselect", "")
+        columnselect.remove("")
+        summary_data.insert(0, columnselect)
 
     for row in summary_data:
         temprow = []

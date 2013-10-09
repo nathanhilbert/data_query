@@ -63,6 +63,20 @@
           return false;
         });
 
+        $(".download_button_all").click(function(e){
+          e.preventDefault();
+
+          var thedata = $(".query_form").serialize() + "&getalldata=1";
+
+          $.fileDownload('/avanse/getfile/tables', {
+                  preparingMessageHtml: "We are preparing your report, please wait...",
+                  failMessageHtml: "There was a problem generating your report, please try again.",
+                  httpMethod: "GET",
+                  data: thedata
+              });
+          return false;
+        });
+
 
         $( "#fromdate" ).datepicker({
         defaultDate: "+1w",
@@ -222,6 +236,7 @@
             <div class="span12">
               <h2>Data Table</h2>
                 <p><a href="#" class="download_button">Download Table in Excel</a></p>
+                <p><a href="#" class="download_button_all">Download All Data</a></p>
                  <p><div id="data_table" style="width:100%;"></div></p>
             </div><!--/span-->
 
