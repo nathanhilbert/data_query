@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>{{ TITLE }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
@@ -160,45 +160,45 @@
             </span>
             <form action="/avanse/tables" method="get" class="query_form">
             <div class="span4 accordion">
-              <h3><a href="#">Choose Options</a></h3>
+              <h3><a href="#">1. Choisissez la source de données</a></h3>
               <div>
 
                   
-                    <p>First choose a survey</p><select name="survey_name" class="update_page questionclass" >
+                    <p>Données disponibles</p><select name="survey_name" class="update_page questionclass" >
                       {{survey_options|safe}}
                     </select>
                 </div>
 
-              <h3><a href="#">Query by string</a></h3>
+              <h3><a href="#">Recerche par le texte (optionnel)</a></h3>
                 <div>
 
-                    <p>Search by string</p><select name="questionstring" class="questionclass update_page" value="{{questionstring_value}}">
+                    <p>Recerche par le texte</p><select name="questionstring" class="questionclass update_page" value="{{questionstring_value}}">
                       {{questionstring_options|safe}}
                     </select>
 
-                    <p>Value equals</p>
-                    <select multiple name="questionstring_search" class="questionclass chosenobject">
+                    <p>égale (détenir le contrôle sélectionner plusieurs)</p>
+                    <select multiple name="questionstring_search" size=10 class="questionclass chosenobject">
                       {{questionstring_search_options|safe}}
                     </select>
                 </div>
-              <h3><a href="#">Query by number</a></h3>
+              <h3><a href="#">Recerche par le nombre (optionnel)</a></h3>
                 <div>
 
 
-                    <p>Search by number</p><select name="questionnumber" class="questionclass">
+                    <p>Recerche par le nombre</p><select name="questionnumber" class="questionclass">
                       {{questionnumber_options|safe}}
                     </select>
-                    <p>Operator</p><select name="questionnumber_operator" class="questionclass">
+                    <p>opérateur</p><select name="questionnumber_operator" class="questionclass">
                       {{questionnumber_operator_options|safe}}
                     </select>
 
-                    <p>Value</p><input type="text" name="questionnumber_search" class="questionclass" value="{{questionnumber_search_option}}">
+                    <p>valeur</p><input type="text" name="questionnumber_search" class="questionclass" value="{{questionnumber_search_option}}">
                 </div>
 
-              <h3><a href="#">Query by date</a></h3>
+              <h3><a href="#">Recherche par le date varier (optionnel)</a></h3>
                 <div>
 
-                    <p>Search by date</p><select name="questiondate" class="questionclass">
+                    <p>Recherche par le date varier </p><select name="questiondate" class="questionclass">
                       {{questiondate_options|safe}}
                     </select>
                     <label for="fromdate">From</label>
@@ -206,10 +206,10 @@
                     <label for="todate">to</label>
                     <input type="text" id="todate" name="todate" value="{{todate_option|safe}}"/>
                 </div>
-                <h3><a href="#">Select Columns to display</a></h3>
+                <h3><a href="#">2. Choisissez les questions à afficher</a></h3>
                   <div>
                     
-                    <p>Select which columns to display</p>
+                    <p>Sélectionner les questions (détenir le contrôle sélectionner plusieurs)</p>
                     <select multiple name="columnselect" size=10 class="questionclass">
                       {{columnselect_value_options|safe}}
                     </select>
@@ -235,11 +235,11 @@
 
           <div class="row-fluid">
             <div class="span12">
-              <h2>Data Table</h2>
-                <p><a href="#" class="download_button">Download Table in Excel</a></p>
+              <h2>Tableau</h2>
+                <p><a href="#" class="download_button">Télécharger le tableau en Excel</a></p>
                 
                  <p><div id="data_table" style="width:100%;"></div></p>
-                 <p><a href="#" class="download_button_all">Download All Data</a></p>
+                 <p><a href="#" class="download_button_all">Télécharger tout les données</a></p>
             </div><!--/span-->
 
           </div><!--/row-->
@@ -249,10 +249,6 @@
 
 
       <hr>
-
-      <footer>
-        <p>&copy; Company 2012</p>
-      </footer>
 
     </div>
 

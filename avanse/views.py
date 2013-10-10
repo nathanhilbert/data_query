@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.shortcuts import render_to_response
 from django.shortcuts import HttpResponse
 from django.template import RequestContext
@@ -92,7 +93,6 @@ def readFileBamboo(data, d):
 #     d['messages'] = d['messages'], "<br/>Skipped:", numberskipped, "<br/>Successful:", numbersuccessful, "<br/>Failed:", numberfail
 #     return d
 
-@lockdown()
 def upload(request):
     d = {"TITLE":"Upload content"}
 
@@ -120,7 +120,6 @@ def upload(request):
     )
 
 
-@lockdown()
 def managesurveys(request):
     d = {"TITLE":"Upload content"}
     path = join(settings.MEDIA_ROOT, 'datarepo', 'surveys_avanse.pickle')
@@ -229,7 +228,7 @@ def managesurveys(request):
 
 
 def makeSurveyOptions(myarray, selected=""):
-    survey_options = "<option value='' selected>Please select an option</option>"
+    survey_options = u"<option value='' selected>SVP Sélectionner un option</option>"
 
     if (type(selected) is not list):
         selected = [selected]
@@ -365,8 +364,8 @@ def charts(request, chart_type):
     surveys_options_info = getSurveys()
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
-        d['question_options1'] = "<option value=''>Please Select a Survey</option>"
-        d['question_options2'] = "<option value=''>Please Select a Survey</option>"
+        d['question_options1'] = u"<option value=''>Sélectionner la source de données</option>"
+        d['question_options2'] = u"<option value=''>Sélectionner la source de données</option>"
         return render_to_response('charts.html', d)
 
     currentquestion1 = request.GET.get("question1", "")
@@ -380,7 +379,7 @@ def charts(request, chart_type):
         d['chart_class'] = "PieChart"
         d['question_options1'] = makeSurveyOptions(question_options['string'], currentquestion1)
         d['is_disabled'] = "disabled"
-        d['question_options2'] = "<option value=''>Not Required for Pie Chart</option>"
+        d['question_options2'] = u"<option value=''>Pas nécessaire</option>"
         if (currentquestion1 == ""):
             return render_to_response('charts.html', d)
 
@@ -481,18 +480,22 @@ def charts(request, chart_type):
 
 
 
-def getValueOptions(currentsurvey, columnselect, thevalue = ""):
+def getValueOptions(currentsurvey, columnselect, defaultvalue = ""):
 
     thedataset = Dataset(currentsurvey)
 
     dataresults = thedataset.get_data(select=[columnselect])
     optionarray = []
     for therow in dataresults:
-        if ([str(therow[columnselect]), str(therow[columnselect])] not in optionarray):
-            if str(therow[columnselect]) != "null":
-                optionarray.append([str(therow[columnselect]), str(therow[columnselect])])
-    print optionarray
-    return makeSurveyOptions(optionarray, thevalue)
+        try:
+            thevalue = str(therow[columnselect])
+        except:
+            thevalue = therow[columnselect]
+        if ([thevalue, thevalue] not in optionarray):
+            if thevalue != "null":
+                optionarray.append([thevalue, thevalue])
+
+    return makeSurveyOptions(optionarray, defaultvalue)
 
 
 
@@ -505,9 +508,9 @@ def tables(request):
     surveys_options_info = getSurveys()
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
-        d['questionstring_options'] = "<option value=''>Please Select a Survey</option>"
-        d['questionnumber_options'] = "<option value=''>Please Select a Survey</option>"
-        d['column_value_options'] = "<option value=''>Please Select a Survey</option>"
+        d['questionstring_options'] = u"<option value=''>Sélectionner la source de données</option>"
+        d['questionnumber_options'] = u"<option value=''>Sélectionner la source de données</option>"
+        d['column_value_options'] = u"<option value=''>Sélectionner la source de données</option>"
         return render_to_response('tables.html', d)
     question_options = getQuestions(currentsurvey)
 
@@ -567,7 +570,7 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
     d['error_messages'] = ""
 
     if (columnselect == ['']):
-        d['error_messages'] += "<li>You must select a column to display</li>"
+        d['error_messages'] += "<li>Vous devez sélectionner une question à afficher</li>"
 
 
 
@@ -608,7 +611,7 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
                 else:
                     thequery[questionstring] = {"$in": myquestionstrings}
         else:
-            d['error_messages'] += "<li>You have selected a column of type string to search, but you have not defined a search value</li>"
+            d['error_messages'] += u"<li>Vous avez sélectionné une question de recherche par texte, mais vous n'avez pas défini une valeur de recherche</li>"
 
 
     if questionnumber != "":
@@ -628,14 +631,14 @@ def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = 
                     thequery[questionnumber] = {questionnumber_operator: float(questionnumber_search)}
 
         else:
-            d['error_messages'] += "<li>You have selected a column of type number to search, but you have not defined a search value</li>"
+            d['error_messages'] += u"<li>Vous avez sélectionné une question de recherche par nombre, mais vous n'avez pas défini une valeur de recherche</li>"
 
 
 
     print "here is the from date *********", fromdate
     if questiondate != "":
         if fromdate == "" and todate == "":
-            d['error_messages'] += "<li>You have selected a column of type date to search, but you have not defined a search value</li>"
+            d['error_messages'] += u"<li>Vous avez sélectionné une question de recherche par date, mais vous n'avez pas défini une valeur de recherche</li>"
         else:
             if questionnumber in question_options['grouped'].keys():
                 if ("$or" not in thequery.keys()):
