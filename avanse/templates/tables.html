@@ -57,7 +57,7 @@
           $.fileDownload('/avanse/getfile/tables', {
                   preparingMessageHtml: "We are preparing your report, please wait...",
                   failMessageHtml: "There was a problem generating your report, please try again.",
-                  httpMethod: "GET",
+                  httpMethod: "POST",
                   data: $(".query_form").serialize()
               });
           return false;
@@ -71,7 +71,7 @@
           $.fileDownload('/avanse/getfile/tables', {
                   preparingMessageHtml: "We are preparing your report, please wait...",
                   failMessageHtml: "There was a problem generating your report, please try again.",
-                  httpMethod: "GET",
+                  httpMethod: "POST",
                   data: thedata
               });
           return false;
@@ -158,7 +158,7 @@
                 {{error_messages|safe}}
               </ul>
             </span>
-            <form action="/avanse/tables" method="get" class="query_form">
+            <form action="/avanse/tables" method="POST" class="query_form">{% csrf_token %}
             <div class="span4 accordion">
               <h3><a href="#">1. Choisissez la source de données</a></h3>
               <div>

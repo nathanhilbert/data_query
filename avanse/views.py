@@ -503,19 +503,19 @@ def tables(request):
     #define the necessary template options
     d = {"TITLE": "Tables of Data"}
 
-    currentsurvey = request.GET.get("survey_name", "")
-    submitbutton = request.GET.get("submit_button", "")
+    currentsurvey = request.POST.get("survey_name", "")
+    submitbutton = request.POST.get("submit_button", "")
     surveys_options_info = getSurveys()
     d['survey_options'] = makeSurveyOptions(surveys_options_info, currentsurvey)
     if (currentsurvey == ""):
         d['questionstring_options'] = u"<option value=''>Sélectionner la source de données</option>"
         d['questionnumber_options'] = u"<option value=''>Sélectionner la source de données</option>"
         d['column_value_options'] = u"<option value=''>Sélectionner la source de données</option>"
-        return render_to_response('tables.html', d)
+        return render_to_response('tables.html', d, context_instance=RequestContext(request))
     question_options = getQuestions(currentsurvey)
 
-    questionstring = request.GET.get("questionstring", "")
-    questionstring_search = request.GET.getlist("questionstring_search")
+    questionstring = request.POST.get("questionstring", "")
+    questionstring_search = request.POST.getlist("questionstring_search")
     if (questionstring != "" and len(questionstring_search) < 1):
         d['questionstring_options'] = makeSurveyOptions(question_options['string'], questionstring)
         d['error_messages'] = "You must select a value with the query by text"
@@ -534,23 +534,23 @@ def tables(request):
 
     d, summary_data = buildTable(request, question_options, currentsurvey, d, submitbutton)
 
-    return render_to_response('tables.html', d)
+    return render_to_response('tables.html', d, context_instance=RequestContext(request))
 
 
 def buildTable(request, question_options, currentsurvey, d = {}, submitbutton = "passthrough"):
 
 
-    questionstring = request.GET.get("questionstring", "")
-    questionstring_search = request.GET.getlist("questionstring_search", "")
+    questionstring = request.POST.get("questionstring", "")
+    questionstring_search = request.POST.getlist("questionstring_search", "")
 
-    questionnumber = request.GET.get("questionnumber", "")
-    questionnumber_operator = request.GET.get("questionnumber_operator", "")
-    questionnumber_search = request.GET.get("questionnumber_search", "")
+    questionnumber = request.POST.get("questionnumber", "")
+    questionnumber_operator = request.POST.get("questionnumber_operator", "")
+    questionnumber_search = request.POST.get("questionnumber_search", "")
 
-    questiondate = request.GET.get("questiondate", "")
-    fromdate = request.GET.get("fromdate", "")
-    todate = request.GET.get("todate", "")
-    columnselect = request.GET.getlist("columnselect", "")
+    questiondate = request.POST.get("questiondate", "")
+    fromdate = request.POST.get("fromdate", "")
+    todate = request.POST.get("todate", "")
+    columnselect = request.POST.getlist("columnselect", "")
 
 
     d['questionnumber_options'] = makeSurveyOptions(question_options['numeric'], questionnumber)
@@ -760,19 +760,19 @@ def getalldata(request, currentsurvey):
 
 def getfiletables(request):
 
-    currentsurvey = request.GET.get("survey_name", "")
+    currentsurvey = request.POST.get("survey_name", "")
     question_options = getQuestions(currentsurvey)
 
     fileHandle = StringIO()
     spamwriter = csv.writer(fileHandle)
 
     getallcolumns = False
-    if (request.GET.get("getalldata", "") != ""):
+    if (request.POST.get("getalldata", "") != ""):
         summary_data = getalldata(request, currentsurvey)
     else:
         d, summary_data = buildTable(request, question_options, currentsurvey)
 
-        columnselect = request.GET.getlist("columnselect", "")
+        columnselect = request.POST.getlist("columnselect", "")
         columnselect.remove("")
         summary_data.insert(0, columnselect)
 
