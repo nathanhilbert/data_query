@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Data Query</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+      #accordion{
+        min-width: 300px;
+        width:45%;
+        display: inline-block;
+      }
+      .thumbimage{
+        max-width:150px;
+        max-height:150px;
+      }
+    </style>
+    <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+     <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <!---
+    <link rel="shortcut icon" href="/static/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/static/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/static/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/static/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="/static/ico/apple-touch-icon-57-precomposed.png"> -->
+    <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+
+
+    <link rel="stylesheet" href="/static/openlayers/theme/default/style.css" type="text/css">
+    <script src="/static/openlayers/OpenLayers.js"></script>
+    <script src="/static/jqueryui/jquery.form.min.js"></script>
+    <script type="text/javascript" src="/static/js/jquery.fileDownload.js"></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script src="/static/js/data_query.js"></script>
+
+  <link href="static/js/jquery.treetable.css" rel="stylesheet" type="text/css" />
+    <script src="static/css/jquery.treetable.js"></script>
+    <script>
+    //$("#your_table_id").treetable();
+    /*
+<table>
+  <tr data-tt-id="1">
+    <td>Parent</td>
+  </tr>
+  <tr data-tt-id="2" data-tt-parent-id="1">
+    <td>Child</td>
+  </tr>
+</table>
+*/
+    </script>
+
+    
+  </head>
+
+  <body onload="">
+
+    {% include "upperblock.html" %}
+
+
+     <div class="container-fluid">
+              <div id="map" class="map" style="width: 45%;height: 800px;display: inline-block;min-width: 200px;float:left;"></div>
+
+              <div id="accordion">
+                <h3>Get Geofiles</h3>
+                <div>
+                  <input type="checkbox" id="drawbox" name="drawbox" value="True"/>Draw Box 
+                  <form id="dataform">
+                    <div id="warningtext" style="color:red;"></div>
+                    Search by text: <input type="text" name="text_search" id="text_search" value="" checked="checked">
+                    <select id="query_method" name="query_method">
+                      <option value="within">Within</option>
+                      <option value="intersect">Intersecting</option>
+                    </select>
+
+                    <input type="text" name="query_wkt" id="query_wkt" value="" checked="checked">
+
+                    <input type="submit" value="Search" /> 
+                </form>
+                </div>
+              </div>
+
+
+      </div><!--/row-->
+
+      <div class="container-fluid bottom-table" id="bottom-table">
+
+      </div>
+      <div id="information-dialog" title="Feature Information" style="display:none;z-index:99999">
+        <p>Show finromation ehre.</p>
+      </div>
+
+
+
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+
+  </body>
+</html>

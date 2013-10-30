@@ -47,53 +47,14 @@
     <script src="/static/openlayers/OpenLayers.js"></script>
     <script src="/static/jqueryui/jquery.form.min.js"></script>
     <script type="text/javascript" src="http://www.google.com/jsapi"></script>
-    <script src="/static/js/tamis.js"></script>
+    <script src="/static/js/data_query.js"></script>
 
-
-
-
-    
-    <script type="text/javascript">
-
-/*
-      google.load("visualization", "1", {packages:["corechart"]});
-      google.setOnLoadCallback(drawCharts);
-      function drawCharts(){
-        var summary_data = '{{summary_data}}';
-        var parsestring = summary_data.replace(/&quot;/g, "\"");
-        var summary_output_object = JSON.parse(parsestring);
-        summary_output_object.unshift(["Question Choice", "Response"]);
-        var summary_output_data = google.visualization.arrayToDataTable(summary_output_object);
-        var options = {title:"Question Responses"};
-        var chart = new google.visualization.ColumnChart(document.getElementById("summary_info"));
-        chart.draw(summary_output_data, options);
-        */
-     // }
-    </script>
     
   </head>
 
   <body onload="">
 
-    <div class="navbar navbar-inverse navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container-fluid">
-          <a data-target=".nav-collapse" data-toggle="collapse" class="btn btn-navbar">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a href="/myfirstapp/home" class="brand">FormHub Experiments</a>
-          <div class="nav-collapse">
-            <ul class="nav">
-              <li ><a href="/myfirstapp/home">Home</a></li>
-              <li><a href="/myfirstapp/questions">Questions</a></li>
-              <li class="active"><a href="/myfirstapp/mashup">Mashup</a></li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
-    </div>
+    {% include "upperblock.html" %}
     <div class="container-fluid">
       <p>This is an example of bringing in many data sources to a common screen and display information on charts and a common map area.  This type of application could be used
           in a variety of cases including providing project transparency to clients, delivering real-time snapshots of projects to management, or creating data-driven decisions in the field.
