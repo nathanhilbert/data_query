@@ -72,6 +72,8 @@ $(document).ready(function() {
     */
 
 
+
+
     $("#drawbox").change(function(){
         if ($(this).is(':checked')){
             drawControls.activate();
@@ -80,6 +82,17 @@ $(document).ready(function() {
             drawControls.deactivate();
         }
     });
+
+    var processXML = function(){
+        $.getJSON($(this).attr('href'), 
+            function(data){
+                LoadXMLString("xmldialog",data)
+                $( ".xmldialog" ).dialog({width:800, height:800});
+                
+            });
+
+        return false;
+    }
 
     $("#dataform").submit(function(ev){
         if ($("#query_wkt").val() == ""){
@@ -91,10 +104,13 @@ $(document).ready(function() {
             function( data ) {
                 $("#bottom-table").html(data);
                 $("#downloadform").submit(processDataRequest);
+                $(".xmllink").click(processXML);
         });
 
         return false;
     });
+
+
 
 
 

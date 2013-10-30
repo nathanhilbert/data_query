@@ -122,7 +122,8 @@ def drawTableFromGeom(polygon, request):
         outputstring += "<td><input id='downloadselect' name='downloadselect' type='checkbox' value='" + str(row[1]) + "'/></td>"
         for thefield in range(len(FIELDNAMES)):
             outputstring += "<td>" + str(row[thefield]) + "</td>"
-        outputstring += "<td>" + getImageTag(row[3], row[1], MEDIAFILES) + "</td>"
+        #outputstring += "<td>" + getImageTag(row[3], row[1], MEDIAFILES) + "</td>"
+        outputstring += "<td><a href='/data/ajax/getxml?name=" + row[1] + "' class='xmllink'>See Metadata</a></td>"
         outputstring += "</tr>"
         rowcounter += 1
     outputstring += "</table>"
@@ -133,6 +134,23 @@ def drawTableFromGeom(polygon, request):
         outputstring = "<div>There are no layers in this area</div>"
 
     return outputstring
+
+
+def getxml(request):
+    search_text = request.GET.get("name", "")
+    if search_text == "":
+        return
+    conn_string = "host='geodata' dbname='avanse_gis7' user='sde' password='63odata!'"
+    # print the connection string we will use to connect
+    conn = psycopg2.connect(conn_string)
+
+    cursor = conn.cursor('cursor_unique_name', cursor_factory=psycopg2.extras.DictCursor)
+    cursor.execute("SELECT documentation FROM sde.gdb_items \
+        WHERE name::TEXT LIKE '%" + search_text + "%' \
+        LIMIT 1")
+    outputarray = cursor.fetchone()
+    outputstring = outputarray[0]
+    return HttpResponse(json.dumps(outputstring), mimetype="application/json")
 
 
 @csrf_exempt

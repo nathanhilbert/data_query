@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     url(r'^home', 'data_query.views.data_query'),
     url(r'^ajax\/queryresults', 'data_query.views.queryresults'),
     url(r'^ajax\/downloadfiles', 'data_query.views.downloadFiles'),
+    url(r'^ajax\/getxml', 'data_query.views.getxml'),
     
     #url(r'^tables', 'avanse.views.tables'),
     # url(r'^upload', 'avanse.views.upload'),

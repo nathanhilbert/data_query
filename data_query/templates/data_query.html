@@ -26,6 +26,9 @@
         max-width:150px;
         max-height:150px;
       }
+      div.ui-dialog{
+        z-index:99999;
+      }
     </style>
     <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
      <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
@@ -52,10 +55,13 @@
     <script src="/static/jqueryui/jquery.form.min.js"></script>
     <script type="text/javascript" src="/static/js/jquery.fileDownload.js"></script>
     <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <link href="/static/css/XMLDisplay.css" rel="stylesheet" type="text/css" />
+    <script src="/static/js/XMLDisplay.js"></script>
     <script src="/static/js/data_query.js"></script>
 
-  <link href="static/js/jquery.treetable.css" rel="stylesheet" type="text/css" />
-    <script src="static/css/jquery.treetable.js"></script>
+  <link href="/static/css/jquery.treetable.css" rel="stylesheet" type="text/css" />
+    <script src="/static/js/jquery.treetable.js"></script>
+
     <script>
     //$("#your_table_id").treetable();
     /*
@@ -109,6 +115,7 @@
       <div id="information-dialog" title="Feature Information" style="display:none;z-index:99999">
         <p>Show finromation ehre.</p>
       </div>
+       <div class="xmldialog" id="xmldialog" style="display:none;"></div>
 
 
 
